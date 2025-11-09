@@ -21,8 +21,38 @@ try:
 except ImportError:
     YaleScraper = None
 
+try:
+    from .stanford import StanfordScraper
+except ImportError:
+    StanfordScraper = None
+
+try:
+    from .berkeley import BerkeleyScraper
+except ImportError:
+    BerkeleyScraper = None
+
+try:
+    from .harvard import HarvardScraper
+except ImportError:
+    HarvardScraper = None
+
+try:
+    from .cornell import CornellScraper
+except ImportError:
+    CornellScraper = None
+
+try:
+    from .princeton import PrincetonScraper
+except ImportError:
+    PrincetonScraper = None
+
 __all__ = [
     'UConnScraper',
     'MITScraper',
     'YaleScraper',
+    'StanfordScraper',
+    'BerkeleyScraper',
+    'HarvardScraper',
+    'CornellScraper',
+    'PrincetonScraper',
 ]

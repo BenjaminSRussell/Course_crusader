@@ -70,6 +70,7 @@ class UConnScraper(BaseCourseScraper):
         Parse a department page containing multiple courses.
 
         Each course is typically in a courseblock div.
+        Tries to find individual course URLs if available.
         """
         self.logger.info(f"Parsing department page: {response.url}")
 
@@ -87,13 +88,60 @@ class UConnScraper(BaseCourseScraper):
 
         for block in course_blocks:
             try:
-                course = self._parse_course_block(block, dept_name, response.url)
-                if course:
-                    self.log_parse_success(course)
-                    yield course
-                    self.stats['courses_scraped'] += 1
+                # Check if this course has an individual detail page link
+                course_link = block.css('a.bubblelink::attr(href)').get()
+                if not course_link:
+                    course_link = block.css('a.courseblockcode::attr(href)').get()
+
+                if course_link:
+                    # Follow to individual course page
+                    yield response.follow(
+                        course_link,
+                        callback=self.parse_course_detail,
+                        meta={'dept_name': dept_name, 'block': block}
+                    )
+                else:
+                    # Parse course from this page (no individual URL)
+                    course = self._parse_course_block(block, dept_name, response.url)
+                    if course:
+                        self.log_parse_success(course)
+                        yield course
+                        self.stats['courses_scraped'] += 1
             except Exception as e:
                 self.log_parse_failure(response.url, str(e))
+
+    def parse_course_detail(self, response):
+        """
+        Parse an individual course detail page.
+
+        Args:
+            response: Scrapy response from individual course page
+        """
+        dept_name = response.meta.get('dept_name', 'Unknown')
+
+        # Try to find course block on detail page
+        course_block = response.css('div.courseblock').get() or response.css('div.course').get()
+
+        if course_block:
+            # Parse from detail page structure
+            course = self._parse_course_block(
+                response.css('div.courseblock, div.course'),
+                dept_name,
+                response.url  # Individual course URL
+            )
+        else:
+            # Fallback: use the block from meta if available
+            block = response.meta.get('block')
+            if block:
+                course = self._parse_course_block(block, dept_name, response.url)
+            else:
+                self.logger.warning(f"Could not find course block on {response.url}")
+                return
+
+        if course:
+            self.log_parse_success(course)
+            yield course
+            self.stats['courses_scraped'] += 1
 
     def _extract_department_name(self, response) -> str:
         """Extract department name from page."""

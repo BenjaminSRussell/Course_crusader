@@ -1,0 +1,24 @@
+# Example crontab configuration for automated course catalog refresh
+#
+# Install with: crontab scripts/crontab.example
+# View with: crontab -l
+# Edit with: crontab -e
+#
+# Format: minute hour day month weekday command
+#
+# NOTE: Adjust paths to match your installation directory
+
+# Weekly refresh on Sunday at 2 AM
+# Refreshes top 5 priority universities
+0 2 * * 0 cd /path/to/Course_crusader && python3 scripts/automated_refresh.py >> logs/cron.log 2>&1
+
+# Daily check for changes (doesn't scrape unless changed)
+# Runs at 3 AM every day
+0 3 * * * cd /path/to/Course_crusader && python3 scripts/automated_refresh.py --max-universities 10 >> logs/cron.log 2>&1
+
+# Monthly full refresh (forces all universities)
+# First day of month at 1 AM
+0 1 1 * * cd /path/to/Course_crusader && python3 scripts/automated_refresh.py --force >> logs/cron.log 2>&1
+
+# Test run every day at noon (limits to 10 courses for testing)
+#0 12 * * * cd /path/to/Course_crusader && python3 scripts/automated_refresh.py --test >> logs/cron_test.log 2>&1
