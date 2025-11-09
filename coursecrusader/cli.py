@@ -299,5 +299,170 @@ def schema():
     click.echo(json.dumps(COURSE_SCHEMA, indent=2))
 
 
+@main.command()
+@click.argument('file', type=click.Path(exists=True))
+@click.option(
+    '--database',
+    '-d',
+    type=click.Path(),
+    default='courses.db',
+    help='SQLite database file (default: courses.db)'
+)
+def import_db(file: str, database: str):
+    """
+    Import course data from JSONL/JSON file into SQLite database.
+
+    Example:
+
+        coursecrusader import-db uconn_courses.jsonl
+
+        coursecrusader import-db data.jsonl --database my_courses.db
+    """
+    from .database import CourseDatabase
+    from .models import Course
+
+    click.echo(f"📥 Importing {file} into {database}...")
+
+    try:
+        db = CourseDatabase(database)
+        file_path = Path(file)
+        count = 0
+
+        # Read and import courses
+        if file_path.suffix == '.jsonl':
+            with open(file_path, 'r', encoding='utf-8') as f:
+                for line in f:
+                    if line.strip():
+                        course_data = json.loads(line)
+                        course = Course(**course_data)
+                        db.insert_course(course)
+                        count += 1
+        elif file_path.suffix == '.json':
+            with open(file_path, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+                courses_data = data if isinstance(data, list) else [data]
+                for course_data in courses_data:
+                    course = Course(**course_data)
+                    db.insert_course(course)
+                    count += 1
+
+        db.close()
+        click.echo(f"✅ Imported {count} courses into {database}")
+
+    except Exception as e:
+        click.echo(f"❌ Error importing: {e}", err=True)
+        sys.exit(1)
+
+
+@main.command()
+@click.option(
+    '--database',
+    '-d',
+    type=click.Path(exists=True),
+    default='courses.db',
+    help='SQLite database file'
+)
+@click.option(
+    '--university',
+    '-u',
+    help='Filter by university'
+)
+def db_stats(database: str, university: Optional[str]):
+    """
+    Display statistics about the course database.
+
+    Example:
+
+        coursecrusader db-stats
+
+        coursecrusader db-stats --university UConn
+    """
+    from .database import CourseDatabase
+
+    try:
+        db = CourseDatabase(database)
+
+        if university:
+            courses = db.get_courses_by_university(university)
+            click.echo(f"\n📊 Statistics for {university}:")
+            click.echo(f"  Total courses: {len(courses)}")
+        else:
+            stats = db.get_statistics()
+            click.echo("\n📊 Database Statistics:\n")
+            click.echo(f"  Total courses: {stats['total_courses']}")
+            click.echo(f"\n  By University:")
+            for uni, count in stats['by_university'].items():
+                click.echo(f"    {uni}: {count}")
+            click.echo(f"\n  By Level:")
+            for level, count in stats['by_level'].items():
+                click.echo(f"    {level}: {count}")
+            click.echo(f"\n  Prerequisite Parse Rate: {stats['prerequisite_parse_rate']}%")
+
+        db.close()
+
+    except Exception as e:
+        click.echo(f"❌ Error: {e}", err=True)
+        sys.exit(1)
+
+
+@main.command()
+@click.argument('query')
+@click.option(
+    '--database',
+    '-d',
+    type=click.Path(exists=True),
+    default='courses.db',
+    help='SQLite database file'
+)
+@click.option(
+    '--university',
+    '-u',
+    help='Filter by university'
+)
+@click.option(
+    '--limit',
+    '-l',
+    type=int,
+    default=10,
+    help='Maximum results to show'
+)
+def search(query: str, database: str, university: Optional[str], limit: int):
+    """
+    Search courses in the database by title or description.
+
+    Example:
+
+        coursecrusader search "data structures"
+
+        coursecrusader search "calculus" --university MIT
+    """
+    from .database import CourseDatabase
+
+    try:
+        db = CourseDatabase(database)
+        results = db.search_courses(query, university)
+
+        if not results:
+            click.echo(f"No courses found matching '{query}'")
+            return
+
+        click.echo(f"\n🔍 Found {len(results)} matching courses:\n")
+
+        for i, course in enumerate(results[:limit]):
+            click.echo(f"{i+1}. {course['university']} {course['course_id']}: {course['title']}")
+            if course.get('description'):
+                desc = course['description'][:100] + "..." if len(course['description']) > 100 else course['description']
+                click.echo(f"   {desc}\n")
+
+        if len(results) > limit:
+            click.echo(f"... and {len(results) - limit} more results")
+
+        db.close()
+
+    except Exception as e:
+        click.echo(f"❌ Error: {e}", err=True)
+        sys.exit(1)
+
+
 if __name__ == '__main__':
     main()

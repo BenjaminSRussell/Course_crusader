@@ -58,6 +58,15 @@ coursecrusader merge uconn.jsonl mit.jsonl yale.jsonl -o combined.jsonl
 
 # View the schema
 coursecrusader schema
+
+# NEW: Import to SQLite database
+coursecrusader import-db uconn_courses.jsonl
+
+# NEW: Database statistics
+coursecrusader db-stats
+
+# NEW: Search courses in database
+coursecrusader search "machine learning" --university MIT
 ```
 
 ## Data Schema
@@ -292,8 +301,141 @@ for course in scraper.scrape_pdf("https://example.edu/catalog.pdf"):
 The PDF parser:
 - Downloads PDFs directly from URLs (no manual download needed)
 - Handles broken lines and formatting issues
+- **NEW**: Multi-column layout detection and proper text extraction
 - Extracts structured course data
 - Uses pdfplumber (better) or PyPDF2 (fallback)
+
+## Advanced Features (Phase 3-5)
+
+### SQLite Database Support
+
+Export and query course data using SQLite:
+
+```bash
+# Import JSONL to database
+coursecrusader import-db uconn_courses.jsonl
+
+# View database statistics
+coursecrusader db-stats
+
+# Search courses
+coursecrusader search "calculus" --university UConn --limit 5
+```
+
+Python API:
+
+```python
+from coursecrusader.database import CourseDatabase
+
+db = CourseDatabase("courses.db")
+
+# Get all courses for a university
+courses = db.get_courses_by_university("UConn")
+
+# Search by keyword
+results = db.search_courses("data structures", university="MIT")
+
+# Get statistics
+stats = db.get_statistics()
+print(f"Total courses: {stats['total_courses']}")
+print(f"Prerequisite parse rate: {stats['prerequisite_parse_rate']}%")
+
+db.close()
+```
+
+### Change Detection & Automated Refresh
+
+Monitor catalogs for updates and automatically re-scrape when changes are detected:
+
+```python
+from coursecrusader.refresh import ChangeDetector, RefreshScheduler
+
+# Detect changes
+detector = ChangeDetector("snapshots.json")
+has_changed, reason = detector.check_for_changes(
+    university="UConn",
+    url="https://catalog.uconn.edu/courses/"
+)
+
+if has_changed:
+    print(f"Catalog changed: {reason}")
+    # Trigger re-scraping
+
+# Automated refresh scheduling
+scheduler = RefreshScheduler(detector)
+should_refresh, reason = scheduler.should_refresh("UConn", catalog_url)
+
+# Get refresh priorities
+priorities = scheduler.get_refresh_priority()
+for university, priority in priorities[:5]:
+    print(f"{university}: priority {priority}")
+```
+
+Features:
+- Content hash-based change detection
+- Configurable check intervals
+- Priority-based refresh scheduling
+- Stale catalog identification
+- Automatic snapshot management
+
+### Data Quality Validation
+
+Measure scraper accuracy against manually verified golden datasets:
+
+```python
+from coursecrusader.validation import GoldenDatasetValidator
+
+# Create golden dataset sample for verification
+from coursecrusader.validation import create_golden_sample
+create_golden_sample(
+    "uconn_courses.jsonl",
+    "golden_sample.json",
+    sample_size=50
+)
+
+# After manual verification, validate scraped data
+validator = GoldenDatasetValidator("golden_verified.json")
+report = validator.validate_dataset("uconn_courses.jsonl")
+
+# Print detailed report
+validator.print_report(report)
+```
+
+Validation metrics:
+- Field-by-field accuracy (course_id, title, credits, etc.)
+- Completeness rates
+- Error identification
+- Overall quality scores
+
+### Performance Monitoring
+
+Profile scraper performance and resource usage:
+
+```python
+from coursecrusader.performance import PerformanceMonitor, profile_scraper
+
+# Monitor a scraping run
+monitor = PerformanceMonitor()
+metrics = monitor.start_monitoring("UConn")
+
+# ... run scraper ...
+
+monitor.update_metrics("UConn", courses=1000, pages=50)
+monitor.end_monitoring("UConn")
+monitor.print_summary()
+
+# Context manager for automatic profiling
+with profile_scraper("MIT") as metrics:
+    # Run scraper
+    metrics.update(courses=2000, pages=100)
+# Automatically prints performance summary
+```
+
+Performance metrics tracked:
+- Duration and courses/second rate
+- Page fetch count
+- Memory peak usage
+- Error count
 
 ## Testing
 

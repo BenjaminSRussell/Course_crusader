@@ -95,18 +95,90 @@ class PDFCatalogParser:
             return self._parse_with_pypdf2(pdf_bytes)
 
     def _parse_with_pdfplumber(self, pdf_bytes: bytes) -> str:
-        """Parse PDF using pdfplumber (preserves layout better)."""
+        """
+        Parse PDF using pdfplumber (preserves layout better).
+
+        Handles multi-column layouts by detecting columns and extracting
+        them in proper reading order.
+        """
         text_parts = []
 
         with pdfplumber.open(io.BytesIO(pdf_bytes)) as pdf:
             for page in pdf.pages:
-                # Extract text with layout
-                text = page.extract_text()
+                # Try to detect if page has multiple columns
+                if self._is_multi_column_page(page):
+                    # Extract columns separately
+                    text = self._extract_multi_column_text(page)
+                else:
+                    # Standard text extraction
+                    text = page.extract_text()
+
                 if text:
                     text_parts.append(text)
 
         full_text = '\n\n'.join(text_parts)
         return self._clean_pdf_text(full_text)
+
+    def _is_multi_column_page(self, page) -> bool:
+        """
+        Detect if a page has multiple columns.
+
+        Uses word position clustering to identify column layouts.
+        """
+        try:
+            words = page.extract_words()
+            if len(words) < 20:  # Too few words to determine
+                return False
+
+            # Get x-coordinates of words
+            x_coords = [w['x0'] for w in words]
+
+            # Simple heuristic: if words cluster around 2+ distinct x-positions,
+            # likely multi-column
+            x_coords.sort()
+            gaps = []
+            for i in range(1, len(x_coords)):
+                gap = x_coords[i] - x_coords[i-1]
+                if gap > 50:  # Significant gap suggests column boundary
+                    gaps.append(gap)
+
+            # If we have 1+ large gap, likely 2+ columns
+            return len(gaps) >= 1
+        except:
+            # If word extraction fails, assume single column
+            return False
+
+    def _extract_multi_column_text(self, page) -> str:
+        """
+        Extract text from multi-column page in proper reading order.
+
+        Splits page into columns and extracts left-to-right, top-to-bottom.
+        """
+        try:
+            # Get page dimensions
+            page_width = page.width
+            page_height = page.height
+
+            # Assume 2-column layout (most common)
+            # Split page vertically in half
+            mid_x = page_width / 2
+
+            # Extract left column
+            left_bbox = (0, 0, mid_x, page_height)
+            left_col = page.crop(left_bbox)
+            left_text = left_col.extract_text() or ""
+
+            # Extract right column
+            right_bbox = (mid_x, 0, page_width, page_height)
+            right_col = page.crop(right_bbox)
+            right_text = right_col.extract_text() or ""
+
+            # Combine columns in reading order
+            return left_text + "\n\n" + right_text
+
+        except Exception as e:
+            # Fall back to standard extraction
+            return page.extract_text() or ""
 
     def _parse_with_pypdf2(self, pdf_bytes: bytes) -> str:
         """Parse PDF using PyPDF2 (basic extraction)."""

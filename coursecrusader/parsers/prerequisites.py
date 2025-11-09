@@ -31,14 +31,29 @@ class PrerequisiteParser:
         'junior standing',
         'senior standing',
         'sophomore standing',
+        'freshman standing',
         'graduate standing',
         'admission to',
         'minimum grade',
+        'grade of',
         'gpa',
         'open only to',
         'restricted to',
         'majors only',
         'concurrent enrollment',
+        'consent required',
+        'departmental approval',
+        'by invitation',
+        'audition required',
+       'portfolio review',
+        'prerequisite waiver',
+    ]
+
+    # Grade requirement patterns
+    GRADE_PATTERNS = [
+        r'minimum grade of\s+([A-F][+-]?)',
+        r'grade of\s+([A-F][+-]?)\s+or\s+(better|higher)',
+        r'([A-F][+-]?)\s+or\s+(better|higher)',
     ]
 
     def __init__(self):

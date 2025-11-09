@@ -53,6 +53,16 @@ httpcache/
 combined.*
 output.*
 
+# Database files
+*.db
+*.db-journal
+
+# Change detection
+catalog_snapshots.json
+
+# Validation
+golden_*.json
+
 # Logs
 *.log
 
