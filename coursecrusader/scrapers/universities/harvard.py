@@ -17,18 +17,9 @@ class HarvardScraper(BaseCourseScraper):
 
     name = "harvard"
     university = "Harvard University"
-
     start_urls = ['https://courses.my.harvard.edu/']
 
-    custom_settings = {
-        'FEEDS': {
-            'harvard_courses.jsonl': {
-                'format': 'jsonlines',
-                'encoding': 'utf-8',
-                'overwrite': True,
-            },
-        },
-    }
+
 
     def parse(self, response):
         """Parse Harvard courses page."""
@@ -41,8 +32,7 @@ class HarvardScraper(BaseCourseScraper):
 
         for block in course_blocks:
             course = self._parse_course_block(block, "Harvard", response.url)
-            if course:
-                yield course
+            yield from self._process_course_block(course, response.url)
 
     def _parse_course_block(self, block, dept_name, page_url):
         """Parse course block."""

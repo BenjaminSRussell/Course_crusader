@@ -26,7 +26,6 @@ class Course:
     level: str
     department: str
 
-    # Optional fields
     prerequisites: Optional[Dict[str, Any]] = None
     prerequisites_text: Optional[str] = None
     prerequisites_parsed: bool = False
@@ -39,15 +38,12 @@ class Course:
 
     def __post_init__(self):
         """Validate and normalize fields after initialization."""
-        # Normalize course_id format
         self.course_id = self._normalize_course_id(self.course_id)
 
-        # Validate level
         valid_levels = ["Undergraduate", "Graduate", "Professional", "Unknown"]
         if self.level not in valid_levels:
             self.level = "Unknown"
 
-        # Set last_updated if not provided
         if self.last_updated is None:
             self.last_updated = datetime.utcnow().isoformat() + "Z"
 
@@ -61,15 +57,9 @@ class Course:
             "CS  101" -> "CS 101"
             "MATH-2410Q" -> "MATH 2410Q"
         """
-        # Remove extra whitespace and hyphens
         course_id = re.sub(r'[-\s]+', ' ', course_id.strip())
-
-        # Ensure space between letters and numbers
         course_id = re.sub(r'([A-Z]+)(\d)', r'\1 \2', course_id)
-
-        # Clean up multiple spaces
         course_id = re.sub(r'\s+', ' ', course_id)
-
         return course_id.upper()
 
     @staticmethod
@@ -94,7 +84,6 @@ class Course:
     def to_dict(self) -> Dict[str, Any]:
         """Convert course to dictionary, excluding None values."""
         data = asdict(self)
-        # Remove None values for cleaner output
         return {k: v for k, v in data.items() if v is not None}
 
     def validate(self) -> tuple[bool, List[str]]:
@@ -106,7 +95,6 @@ class Course:
         """
         errors = []
 
-        # Check required fields
         required = ['university', 'course_id', 'title', 'description',
                    'credits', 'level', 'department']
         for field_name in required:
@@ -114,11 +102,9 @@ class Course:
             if not value or (isinstance(value, str) and not value.strip()):
                 errors.append(f"Missing required field: {field_name}")
 
-        # Validate course_id format
         if not re.match(r'^[A-Z]{2,6}\s*\d{3,4}[A-Z]?$', self.course_id):
             errors.append(f"Invalid course_id format: {self.course_id}")
 
-        # Validate credits
         if isinstance(self.credits, str):
             if not re.match(r'^\d+(-\d+)?$', str(self.credits)):
                 errors.append(f"Invalid credits format: {self.credits}")

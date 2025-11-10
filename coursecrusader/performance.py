@@ -105,7 +105,6 @@ class PerformanceMonitor:
         metrics.pages_fetched += pages
         metrics.errors += errors
 
-        # Update memory peak
         memory_mb = self.process.memory_info().rss / 1024 / 1024
         if memory_mb > metrics.memory_peak_mb:
             metrics.memory_peak_mb = memory_mb
@@ -164,7 +163,7 @@ def profile_scraper(university: str, monitor: Optional[PerformanceMonitor] = Non
 
     Usage:
         with profile_scraper("UConn") as metrics:
-            # Run scraper
+
             metrics.update(courses=100, pages=10)
 
     Args:

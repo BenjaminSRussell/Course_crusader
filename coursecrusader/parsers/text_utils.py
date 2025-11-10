@@ -19,7 +19,6 @@ def clean_text(text: str) -> str:
     if not text:
         return ""
 
-    # Normalize whitespace
     text = normalize_whitespace(text)
 
     # Remove common HTML artifacts
@@ -95,7 +94,6 @@ def extract_credits(text: str) -> Optional[Union[int, float, str]]:
                 # Range like "3-4"
                 return f"{match.group(1)}-{match.group(2)}"
             else:
-                # Single number
                 credit_str = match.group(1)
                 # Return as int if whole number, else float
                 if '.' in credit_str:
@@ -103,7 +101,6 @@ def extract_credits(text: str) -> Optional[Union[int, float, str]]:
                 else:
                     return int(credit_str)
 
-    # Check for variable credit
     if re.search(r'variable|varies', text, re.IGNORECASE):
         return "variable"
 

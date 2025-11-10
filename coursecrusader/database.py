@@ -29,14 +29,13 @@ class CourseDatabase:
         """
         self.db_path = db_path
         self.conn = sqlite3.connect(db_path)
-        self.conn.row_factory = sqlite3.Row  # Enable dict-like access
+        self.conn.row_factory = sqlite3.Row
         self._create_tables()
 
     def _create_tables(self):
         """Create database tables if they don't exist."""
         cursor = self.conn.cursor()
 
-        # Main courses table
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS courses (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -60,7 +59,6 @@ class CourseDatabase:
             )
         """)
 
-        # Index for faster queries
         cursor.execute("""
             CREATE INDEX IF NOT EXISTS idx_university
             ON courses(university)
@@ -81,7 +79,6 @@ class CourseDatabase:
             ON courses(level)
         """)
 
-        # Metadata table for tracking scrapes
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS scrape_metadata (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -109,7 +106,6 @@ class CourseDatabase:
         """
         cursor = self.conn.cursor()
 
-        # Convert complex fields to JSON
         prerequisites_json = json.dumps(course.prerequisites) if course.prerequisites else None
         corequisites_json = json.dumps(course.corequisites) if course.corequisites else None
         offerings_json = json.dumps(course.offerings) if course.offerings else None
@@ -265,11 +261,9 @@ class CourseDatabase:
         """
         cursor = self.conn.cursor()
 
-        # Total courses
         cursor.execute("SELECT COUNT(*) FROM courses")
         total_courses = cursor.fetchone()[0]
 
-        # Courses by university
         cursor.execute("""
             SELECT university, COUNT(*) as count
             FROM courses
@@ -278,7 +272,6 @@ class CourseDatabase:
         """)
         by_university = {row[0]: row[1] for row in cursor.fetchall()}
 
-        # Courses by level
         cursor.execute("""
             SELECT level, COUNT(*) as count
             FROM courses
@@ -286,7 +279,6 @@ class CourseDatabase:
         """)
         by_level = {row[0]: row[1] for row in cursor.fetchall()}
 
-        # Prerequisites parsed rate
         cursor.execute("""
             SELECT
                 COUNT(CASE WHEN prerequisites_parsed = 1 THEN 1 END) as parsed,
@@ -357,7 +349,6 @@ class CourseDatabase:
             cursor.execute("SELECT * FROM courses ORDER BY university, course_id")
             courses = [dict(row) for row in cursor.fetchall()]
 
-        # Convert JSON strings back to objects
         for course in courses:
             if course.get('prerequisites_json'):
                 course['prerequisites'] = json.loads(course['prerequisites_json'])
@@ -366,11 +357,10 @@ class CourseDatabase:
             if course.get('offerings_json'):
                 course['offerings'] = json.loads(course['offerings_json'])
 
-            # Remove JSON fields (replaced with objects)
             course.pop('prerequisites_json', None)
             course.pop('corequisites_json', None)
             course.pop('offerings_json', None)
-            course.pop('id', None)  # Remove internal ID
+            course.pop('id', None)
 
         with open(output_path, 'w', encoding='utf-8') as f:
             json.dump(courses, f, indent=2, ensure_ascii=False)

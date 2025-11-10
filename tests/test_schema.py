@@ -15,7 +15,6 @@ class TestSchema:
         """Test that the schema itself is valid JSON Schema."""
         assert validate_course_schema()
 
-        # Should not raise exception
         jsonschema.Draft7Validator.check_schema(COURSE_SCHEMA)
 
     def test_schema_has_required_fields(self):
@@ -39,10 +38,6 @@ class TestSchema:
             'description': 'Introduction to data structures and algorithms',
             'credits': 3,
             'level': 'Undergraduate',
-            'department': 'Computer Science & Engineering'
-        }
-
-        # Should not raise exception
         jsonschema.validate(course_data, COURSE_SCHEMA)
 
     def test_validate_missing_required_field(self):
@@ -50,7 +45,6 @@ class TestSchema:
         course_data = {
             'university': 'UConn',
             'course_id': 'CSE 2100',
-            # Missing title
             'description': 'Test',
             'credits': 3,
             'level': 'Undergraduate',
@@ -92,5 +86,4 @@ class TestSchema:
             'prerequisites_parsed': True
         }
 
-        # Should not raise exception
         jsonschema.validate(course_data, COURSE_SCHEMA)

@@ -1,7 +1,5 @@
 """
 MIT (Massachusetts Institute of Technology) course catalog scraper.
-
-MIT uses a different catalog format than UConn.
 """
 
 import scrapy
@@ -23,21 +21,11 @@ class MITScraper(BaseCourseScraper):
 
     name = "mit"
     university = "Massachusetts Institute of Technology"
-
-    # MIT course catalog URL
     start_urls = [
         'http://catalog.mit.edu/subjects/'
     ]
 
-    custom_settings = {
-        'FEEDS': {
-            'mit_courses.jsonl': {
-                'format': 'jsonlines',
-                'encoding': 'utf-8',
-                'overwrite': True,
-            },
-        },
-    }
+
 
     def parse(self, response):
         """
@@ -85,30 +73,21 @@ class MITScraper(BaseCourseScraper):
         self.logger.info(f"Found {len(course_blocks)} courses in {dept_name}")
 
         for block in course_blocks:
-            try:
-                course = self._parse_course_block(block, dept_name, response.url)
-                if course:
-                    self.log_parse_success(course)
-                    yield course
-                    self.stats['courses_scraped'] += 1
-            except Exception as e:
-                self.log_parse_failure(response.url, str(e))
+            course = self._parse_course_block(block, dept_name, response.url)
+            yield from self._process_course_block(course, response.url)
 
     def _extract_department_name(self, response) -> str:
         """Extract department name from subject page."""
-        # Try h1 or title
         title = response.css('h1::text').get()
         if title:
             return title.strip()
 
-        # Try page title
         page_title = response.css('title::text').get()
         if page_title:
             # Remove "| MIT Catalog" or similar
             title = re.sub(r'\s*\|.*$', '', page_title)
             return title.strip()
 
-        # Fallback to URL
         match = re.search(r'/subjects/([\w-]+)/', response.url)
         if match:
             return f"Course {match.group(1)}"
@@ -121,7 +100,6 @@ class MITScraper(BaseCourseScraper):
 
         MIT course format: "6.001 Structure and Interpretation of Computer Programs"
         """
-        # Get all text from block
         text = ' '.join(block.css('::text').getall())
         text = clean_text(text)
 
@@ -156,14 +134,12 @@ class MITScraper(BaseCourseScraper):
                 units = units_match.group(1).split('-')
                 credits = int(units[0])
 
-        # Extract prerequisites
         prereq_data = self._extract_prerequisites(text, description)
 
         # MIT courses are typically undergraduate or graduate based on number
         # 100-999 are undergrad, 1000+ are grad (varies by department)
         level = self._infer_mit_level(course_num)
 
-        # Create course object
         course = self.create_course(
             course_id=course_id,
             title=title,
@@ -179,16 +155,13 @@ class MITScraper(BaseCourseScraper):
 
     def _infer_mit_level(self, course_num: str) -> str:
         """Infer course level from MIT course number."""
-        # Split the string by the dot
         parts = course_num.split('.')
 
-        # The course number is the second part
         if len(parts) > 1:
             num_str = parts[1]
         else:
             num_str = parts[0]
 
-        # remove non numeric characters
         num_str = ''.join(filter(str.isdigit, num_str))
 
         if not num_str:
@@ -206,7 +179,6 @@ class MITScraper(BaseCourseScraper):
 
     def _extract_prerequisites(self, text: str, description: str) -> dict:
         """Extract prerequisites from course text."""
-        # Look for prerequisite mention
         prereq_match = re.search(
             r'(?:prerequisite|prereq)[s]?\s*[:\-]\s*([^.;]+)',
             text + ' ' + description,

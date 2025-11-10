@@ -24,7 +24,7 @@ class TestDatabaseIntegration:
         with tempfile.TemporaryDirectory() as tmpdir:
             db_path = Path(tmpdir) / "test.db"
 
-            # Create database and add courses
+
             db = CourseDatabase(str(db_path))
 
             course1 = Course(
@@ -50,11 +50,11 @@ class TestDatabaseIntegration:
             db.insert_course(course1)
             db.insert_course(course2)
 
-            # Query courses
+
             courses = db.get_courses_by_university("TestU")
             assert len(courses) == 2
 
-            # Search
+
             results = db.search_courses("data", "TestU")
             assert len(results) == 1
             assert results[0]['course_id'] == "CS 102"
@@ -67,7 +67,7 @@ class TestDatabaseIntegration:
             db_path = Path(tmpdir) / "test.db"
             db = CourseDatabase(str(db_path))
 
-            # Add multiple courses
+
             for i in range(5):
                 course = Course(
                     university="TestU",
@@ -141,18 +141,18 @@ class TestValidationFramework:
             total_courses=50
         )
 
-        # Add field metrics
+
         course_id_metrics = ValidationMetrics(total=50, correct=50, incorrect=0, missing=0)
         title_metrics = ValidationMetrics(total=50, correct=48, incorrect=2, missing=0)
 
         report.add_field_metric("course_id", course_id_metrics)
         report.add_field_metric("title", title_metrics)
 
-        # Test overall accuracy
+
         overall = report.overall_accuracy()
         assert overall == 98.0  # (50 + 48) / (50 + 50) * 100
 
-        # Test serialization
+
         report_dict = report.to_dict()
         assert report_dict['university'] == "TestU"
         assert 'field_metrics' in report_dict
@@ -177,11 +177,11 @@ class TestPDFParserIntegration:
         Prerequisite: CSE 2100.
         """
 
-        # Split into courses
+
         courses = parser.split_into_courses(sample_text)
         assert len(courses) == 2
 
-        # Parse first course
+
         course_data = parser.extract_course_from_text(courses[0])
         assert course_data is not None
         assert course_data['course_id'] == "CSE 2100"
@@ -196,11 +196,11 @@ class TestEndToEndWorkflow:
     def test_jsonl_to_database_workflow(self):
         """Test complete workflow: JSONL -> Database -> Query."""
         with tempfile.TemporaryDirectory() as tmpdir:
-            # Create test JSONL file
+
             jsonl_path = Path(tmpdir) / "courses.jsonl"
             db_path = Path(tmpdir) / "courses.db"
 
-            # Write test data
+
             test_courses = [
                 {
                     'university': 'TestU',
@@ -226,17 +226,17 @@ class TestEndToEndWorkflow:
                 for course in test_courses:
                     f.write(json.dumps(course) + '\n')
 
-            # Import to database
+
             db = CourseDatabase(str(db_path))
             for course_data in test_courses:
                 course = Course(**course_data)
                 db.insert_course(course)
 
-            # Query and verify
+
             courses = db.get_courses_by_university("TestU")
             assert len(courses) == 2
 
-            # Search
+
             results = db.search_courses("Data")
             assert len(results) == 1
 

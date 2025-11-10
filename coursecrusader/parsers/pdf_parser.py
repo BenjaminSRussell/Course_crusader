@@ -6,18 +6,16 @@ structured course data.
 """
 
 import re
+import re
 import io
 from typing import List, Dict, Optional, Iterator
 from urllib.request import urlopen
 
 try:
     import PyPDF2
-except ImportError:
-    PyPDF2 = None
-
-try:
     import pdfplumber
 except ImportError:
+    PyPDF2 = None
     pdfplumber = None
 
 
@@ -57,11 +55,9 @@ class PDFCatalogParser:
         Returns:
             Extracted text content
         """
-        # Download PDF
         response = urlopen(url)
         pdf_bytes = response.read()
 
-        # Parse
         return self.parse_pdf_bytes(pdf_bytes)
 
     def parse_pdf_file(self, file_path: str) -> str:
@@ -107,10 +103,8 @@ class PDFCatalogParser:
             for page in pdf.pages:
                 # Try to detect if page has multiple columns
                 if self._is_multi_column_page(page):
-                    # Extract columns separately
                     text = self._extract_multi_column_text(page)
                 else:
-                    # Standard text extraction
                     text = page.extract_text()
 
                 if text:
@@ -155,29 +149,23 @@ class PDFCatalogParser:
         Splits page into columns and extracts left-to-right, top-to-bottom.
         """
         try:
-            # Get page dimensions
             page_width = page.width
             page_height = page.height
 
             # Assume 2-column layout (most common)
-            # Split page vertically in half
             mid_x = page_width / 2
 
-            # Extract left column
             left_bbox = (0, 0, mid_x, page_height)
             left_col = page.crop(left_bbox)
             left_text = left_col.extract_text() or ""
 
-            # Extract right column
             right_bbox = (mid_x, 0, page_width, page_height)
             right_col = page.crop(right_bbox)
             right_text = right_col.extract_text() or ""
 
-            # Combine columns in reading order
             return left_text + "\n\n" + right_text
 
         except Exception as e:
-            # Fall back to standard extraction
             return page.extract_text() or ""
 
     def _parse_with_pypdf2(self, pdf_bytes: bytes) -> str:
@@ -201,10 +189,8 @@ class PDFCatalogParser:
 
         Handles common PDF issues like broken lines, extra spaces, etc.
         """
-        # Fix broken lines
         text = fix_broken_lines(text)
 
-        # Clean general text
         text = clean_text(text)
 
         return text
@@ -230,11 +216,9 @@ class PDFCatalogParser:
             # Example: "CSE 2100. Data Structures"
             course_pattern = r'\n([A-Z]{2,6})\s+(\d{3,4}[A-Z]?)\.\s+'
 
-        # Find all course starts
         matches = list(re.finditer(course_pattern, text))
 
         if not matches:
-            # No courses found with pattern
             return []
 
         courses = []
@@ -277,12 +261,10 @@ class PDFCatalogParser:
 
         first_line = lines[0]
 
-        # Extract course code and title
         pattern = r'^([A-Z]{2,6})\s+(\d{3,4}[A-Z]?)\.\s+(.+?)(?:\.\s+(\d+(?:\.\d+)?)\s+credits?)?\.?\s*$'
         match = re.match(pattern, first_line)
 
         if not match:
-            # Try simpler pattern
             pattern2 = r'^([A-Z]{2,6})\s+(\d{3,4}[A-Z]?)\.\s+(.+)'
             match = re.match(pattern2, first_line)
 
@@ -300,7 +282,6 @@ class PDFCatalogParser:
         if len(match.groups()) >= 4:
             credits = match.group(4)
 
-        # Description is the remaining text
         description_parts = lines[1:] if len(lines) > 1 else []
 
         # If credits not found, look in description
@@ -310,8 +291,6 @@ class PDFCatalogParser:
         if credits is None:
             credits = extract_credits(full_desc)
 
-        # Look for prerequisites
-        prereq_text = None
         prereq_match = re.search(
             r'(?:prerequisite|prereq)[s]?\s*:\s*([^.]+)',
             full_desc,
@@ -363,24 +342,18 @@ class PDFCourseScraper:
         Yields:
             Course dictionaries
         """
-        # Parse PDF
         text = self.parser.parse_pdf_url(pdf_url)
 
-        # Split into courses
         course_texts = self.parser.split_into_courses(text, course_pattern)
 
-        # Parse each course
         for course_text in course_texts:
             course_data = self.parser.extract_course_from_text(course_text)
 
             if course_data:
-                # Add university and department
                 course_data['university'] = self.university
                 course_data['department'] = self.department
                 course_data['catalog_url'] = pdf_url
 
-                # Infer level
-                from ..models import Course
                 if 'level' not in course_data:
                     course_data['level'] = Course.infer_level(course_data['course_id'])
 

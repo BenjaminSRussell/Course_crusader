@@ -178,7 +178,7 @@ class GoldenDatasetValidator:
                 continue
 
             if actual is None:
-                # Missing in scraped data
+
                 results[field] = False
             elif isinstance(expected, str) and isinstance(actual, str):
                 # String comparison (case-insensitive, normalized)
@@ -186,7 +186,6 @@ class GoldenDatasetValidator:
                 actual_norm = actual.strip().lower()
                 results[field] = expected_norm == actual_norm
             else:
-                # Direct comparison
                 results[field] = expected == actual
 
         return results
@@ -206,7 +205,6 @@ class GoldenDatasetValidator:
         Returns:
             ValidationReport with accuracy metrics
         """
-        # Load scraped data
         scraped_courses = []
         with open(scraped_data_path, 'r', encoding='utf-8') as f:
             if Path(scraped_data_path).suffix == '.jsonl':
@@ -217,20 +215,17 @@ class GoldenDatasetValidator:
                 data = json.load(f)
                 scraped_courses = data if isinstance(data, list) else [data]
 
-        # Filter by university if specified
+
         if university:
             scraped_courses = [c for c in scraped_courses if c['university'] == university]
 
-        # Initialize report
         report = ValidationReport(
             university=university or "All",
             total_courses=len(scraped_courses)
         )
 
-        # Initialize field metrics
         field_metrics = {field: ValidationMetrics() for field in self.VALIDATED_FIELDS}
 
-        # Validate each course
         for course in scraped_courses:
             key = f"{course['university']}:{course['course_id']}"
 
@@ -241,7 +236,6 @@ class GoldenDatasetValidator:
             golden = self.golden_data[key]
             validation_results = self.validate_course(course, golden)
 
-            # Update metrics
             for field, is_correct in validation_results.items():
                 metrics = field_metrics[field]
                 metrics.total += 1
@@ -252,7 +246,6 @@ class GoldenDatasetValidator:
                     metrics.correct += 1
                 else:
                     metrics.incorrect += 1
-                    # Record error
                     report.add_error(
                         course_id=course['course_id'],
                         field=field,
@@ -260,7 +253,7 @@ class GoldenDatasetValidator:
                         actual=course.get(field)
                     )
 
-        # Add metrics to report
+
         for field, metrics in field_metrics.items():
             if metrics.total > 0:  # Only include fields that were validated
                 report.add_field_metric(field, metrics)
@@ -337,7 +330,6 @@ def create_golden_sample(
     """
     import random
 
-    # Load data
     courses = []
     with open(input_path, 'r', encoding='utf-8') as f:
         if Path(input_path).suffix == '.jsonl':
@@ -348,15 +340,12 @@ def create_golden_sample(
             data = json.load(f)
             courses = data if isinstance(data, list) else [data]
 
-    # Filter by university
     if university:
         courses = [c for c in courses if c['university'] == university]
 
-    # Random sample
     if len(courses) > sample_size:
         courses = random.sample(courses, sample_size)
 
-    # Save sample
     with open(output_path, 'w', encoding='utf-8') as f:
         json.dump(courses, f, indent=2, ensure_ascii=False)
 

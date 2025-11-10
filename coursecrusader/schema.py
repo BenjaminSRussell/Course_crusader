@@ -136,7 +136,7 @@ def validate_course_schema():
 
 
 if __name__ == "__main__":
-    # Test schema validity
+
     if validate_course_schema():
         print("Course schema is valid!")
         import json

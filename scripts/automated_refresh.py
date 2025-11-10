@@ -17,8 +17,8 @@ import argparse
 import logging
 from pathlib import Path
 from datetime import datetime
+import json
 
-# Add parent directory to path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from coursecrusader.refresh import ChangeDetector, RefreshScheduler
@@ -29,7 +29,6 @@ from scrapy.crawler import CrawlerProcess
 from scrapy.utils.project import get_project_settings
 
 
-# Configuration
 UNIVERSITY_CONFIGS = {
     'uconn': {
         'name': 'UConn',
@@ -48,7 +47,6 @@ UNIVERSITY_CONFIGS = {
     }
 }
 
-# Paths
 SNAPSHOT_FILE = "catalog_snapshots.json"
 DATABASE_FILE = "courses.db"
 LOG_FILE = "automated_refresh.log"
@@ -87,7 +85,6 @@ def run_scraper(university_key: str, output_file: str, limit: int = None):
     if not scraper_class:
         raise ValueError(f"No scraper found for {university_key}")
 
-    # Configure Scrapy
     settings = get_project_settings()
     settings.set('FEEDS', {
         output_file: {
@@ -100,12 +97,11 @@ def run_scraper(university_key: str, output_file: str, limit: int = None):
     if limit:
         settings.set('CLOSESPIDER_ITEMCOUNT', limit)
 
-    # Run scraper
     process = CrawlerProcess(settings)
     process.crawl(scraper_class)
     process.start()
 
-    # Count courses in output
+
     course_count = 0
     if Path(output_file).exists():
         with open(output_file, 'r') as f:
@@ -176,7 +172,7 @@ def refresh_university(
     """
     logger.info(f"Checking {config['name']}...")
 
-    # Check if refresh needed
+
     has_changed, reason = detector.check_for_changes(
         university=config['name'],
         url=config['url'],
@@ -189,7 +185,6 @@ def refresh_university(
 
     logger.info(f"Refreshing {config['name']}: {reason}")
 
-    # Run scraper
     output_file = f"{university_key}_courses.jsonl"
 
     try:
@@ -201,17 +196,15 @@ def refresh_university(
 
         logger.info(f"Scraped {course_count} courses from {config['name']}")
 
-        # Import to database
+    import json
         import_count = import_to_database(output_file, DATABASE_FILE, logger)
 
-        # Update snapshot
         detector.update_snapshot(
             university=config['name'],
             course_count=course_count,
             notes=f"Automated refresh at {datetime.now().isoformat()}"
         )
 
-        # Record in database metadata
         db = CourseDatabase(DATABASE_FILE)
         db.record_scrape(
             university=config['name'],
@@ -261,19 +254,17 @@ def main():
 
     args = parser.parse_args()
 
-    # Setup
     logger = setup_logging(args.verbose)
     logger.info("=" * 60)
     logger.info("Starting automated course catalog refresh")
     logger.info("=" * 60)
 
-    # Initialize detector and scheduler
+
     detector = ChangeDetector(SNAPSHOT_FILE)
     scheduler = RefreshScheduler(detector)
 
-    # Determine which universities to refresh
+
     if args.university:
-        # Specific university
         if args.university not in UNIVERSITY_CONFIGS:
             logger.error(f"Unknown university: {args.university}")
             sys.exit(1)
@@ -281,29 +272,24 @@ def main():
         universities_to_refresh = [(args.university, UNIVERSITY_CONFIGS[args.university])]
 
     else:
-        # Get top priority universities
         priorities = scheduler.get_refresh_priority()
 
-        # Filter to enabled universities
         universities_to_refresh = [
             (key, config)
             for key, config in UNIVERSITY_CONFIGS.items()
             if config.get('enabled', True)
         ]
 
-        # Sort by priority
         priority_map = {uni: pri for uni, pri in priorities}
         universities_to_refresh.sort(
             key=lambda x: priority_map.get(x[1]['name'], 0),
             reverse=True
         )
 
-        # Limit
         universities_to_refresh = universities_to_refresh[:args.max_universities]
 
     logger.info(f"Will attempt to refresh {len(universities_to_refresh)} universities")
 
-    # Refresh each university
     results = []
     for uni_key, config in universities_to_refresh:
         success, count, message = refresh_university(
@@ -322,7 +308,6 @@ def main():
             'message': message
         })
 
-    # Summary
     logger.info("=" * 60)
     logger.info("Refresh Summary")
     logger.info("=" * 60)
@@ -342,7 +327,6 @@ def main():
 
     logger.info("=" * 60)
 
-    # Exit code
     sys.exit(0 if successful > 0 else 1)
 
 

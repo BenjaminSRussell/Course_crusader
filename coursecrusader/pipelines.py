@@ -22,7 +22,6 @@ class ValidationPipeline:
         """Validate a course item."""
         adapter = ItemAdapter(item)
 
-        # If it's already a Course object, validate it
         if isinstance(item, Course):
             is_valid, errors = item.validate()
 
@@ -30,7 +29,6 @@ class ValidationPipeline:
                 spider.logger.warning(
                     f"Validation failed for {item.course_id}: {errors}"
                 )
-                # Still allow it through but log the issues
                 if item.notes:
                     item.notes += f" | Validation warnings: {'; '.join(errors)}"
                 else:
@@ -38,7 +36,6 @@ class ValidationPipeline:
 
             return item
 
-        # If it's a dict, convert to Course and validate
         try:
             course = Course(**dict(adapter))
             is_valid, errors = course.validate()
@@ -47,7 +44,6 @@ class ValidationPipeline:
                 spider.logger.warning(
                     f"Validation failed for {course.course_id}: {errors}"
                 )
-                # Add validation notes
                 course.notes = f"Validation warnings: {'; '.join(errors)}"
 
             return course
@@ -71,7 +67,6 @@ class DeduplicationPipeline:
         """Check for duplicates."""
         adapter = ItemAdapter(item)
 
-        # Create unique key from university and course_id
         if isinstance(item, Course):
             key = (item.university, item.course_id)
         else:

@@ -86,7 +86,6 @@ class ChangeDetector:
             response = requests.get(url, timeout=30)
             response.raise_for_status()
 
-            # Hash the content
             content = response.content
             return hashlib.sha256(content).hexdigest()
 
@@ -111,14 +110,11 @@ class ChangeDetector:
         Returns:
             (has_changed, reason) tuple
         """
-        # Get current hash
         current_hash = self._compute_content_hash(url)
         if current_hash is None:
             return False, "Failed to fetch catalog"
 
-        # Check if we have a previous snapshot
         if university not in self.snapshots:
-            # First time checking
             snapshot = CatalogSnapshot(
                 university=university,
                 url=url,
@@ -132,27 +128,21 @@ class ChangeDetector:
             self._save_snapshots()
             return True, "First snapshot - needs scraping"
 
-        # Compare with previous snapshot
         previous = self.snapshots[university]
 
-        # Check if enough time has passed since last check (avoid hammering)
         last_checked = datetime.fromisoformat(previous.last_checked)
         if not force and (datetime.utcnow() - last_checked) < timedelta(hours=1):
             return False, "Checked recently - skipping"
 
-        # Update last checked time
         previous.last_checked = datetime.utcnow().isoformat()
 
-        # Compare hashes
         if current_hash != previous.content_hash:
-            # Content changed!
             previous.content_hash = current_hash
             previous.last_updated = datetime.utcnow().isoformat()
             previous.notes = "Catalog updated"
             self._save_snapshots()
             return True, "Catalog content changed"
 
-        # No change
         self._save_snapshots()
         return False, "No changes detected"
 
@@ -244,15 +234,12 @@ class RefreshScheduler:
         if snapshot is None:
             return True, "Never scraped before"
 
-        # Check age of last update
         last_updated = datetime.fromisoformat(snapshot.last_updated)
         age = datetime.utcnow() - last_updated
 
-        # If very old (>30 days), always refresh
         if age > timedelta(days=30):
             return True, f"Stale data (last updated {age.days} days ago)"
 
-        # Otherwise, check for changes
         has_changed, reason = self.detector.check_for_changes(university, url)
         return has_changed, reason
 
@@ -266,16 +253,13 @@ class RefreshScheduler:
         priorities = []
 
         for snapshot in self.detector.list_all():
-            # Calculate priority score
             last_updated = datetime.fromisoformat(snapshot.last_updated)
             days_old = (datetime.utcnow() - last_updated).days
 
-            # Higher score = higher priority
-            score = days_old  # Older = higher priority
+            score = days_old
 
             priorities.append((snapshot.university, score))
 
-        # Sort by priority (highest first)
         priorities.sort(key=lambda x: x[1], reverse=True)
 
         return priorities

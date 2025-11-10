@@ -1,5 +1,6 @@
 import scrapy
 from abc import ABC, abstractmethod
+import re
 from typing import Iterator, Optional, Dict, Any
 from datetime import datetime
 
@@ -10,6 +11,15 @@ from ..parsers import PrerequisiteParser, clean_text, extract_credits
 class BaseCourseScraper(scrapy.Spider, ABC):
     name: str = "base_scraper"
     university: str = "Unknown"
+    custom_settings = {
+        'FEEDS': {
+            'courses.jsonl': {
+                'format': 'jsonlines',
+                'encoding': 'utf-8',
+                'overwrite': True,
+            },
+        },
+    }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -87,3 +97,11 @@ class BaseCourseScraper(scrapy.Spider, ABC):
 
     def validate_course(self, course: Course) -> tuple[bool, list]:
         return course.validate()
+
+    def _process_course_block(self, course: Optional[Course], response_url: str):
+        if course:
+            self.log_parse_success(course)
+            yield course
+            self.stats['courses_scraped'] += 1
+        else:
+            self.log_parse_failure(response_url, "Course block parsing returned None")

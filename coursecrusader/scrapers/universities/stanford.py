@@ -21,20 +21,11 @@ class StanfordScraper(BaseCourseScraper):
 
     name = "stanford"
     university = "Stanford University"
-
     start_urls = [
         'https://explorecourses.stanford.edu/'
     ]
 
-    custom_settings = {
-        'FEEDS': {
-            'stanford_courses.jsonl': {
-                'format': 'jsonlines',
-                'encoding': 'utf-8',
-                'overwrite': True,
-            },
-        },
-    }
+
 
     def parse(self, response):
         """Parse the main explore courses page."""
@@ -45,30 +36,22 @@ class StanfordScraper(BaseCourseScraper):
 
         self.logger.info(f"Found {len(dept_links)} department links")
 
-        for link in dept_links[:5]:  # Limit for testing
+        for link in dept_links[:5]:
             yield response.follow(link, callback=self.parse_department)
 
     def parse_department(self, response):
         """Parse department course listing."""
         self.logger.info(f"Parsing Stanford department: {response.url}")
 
-        # Extract department name
         dept_name = response.css('h1::text').get() or "Unknown"
 
-        # Find course listings
         course_blocks = response.css('.searchResult')
 
         self.logger.info(f"Found {len(course_blocks)} courses in {dept_name}")
 
         for block in course_blocks:
-            try:
-                course = self._parse_course_block(block, dept_name, response.url)
-                if course:
-                    self.log_parse_success(course)
-                    yield course
-                    self.stats['courses_scraped'] += 1
-            except Exception as e:
-                self.log_parse_failure(response.url, str(e))
+            course = self._parse_course_block(block, dept_name, response.url)
+            yield from self._process_course_block(course, response.url)
 
     def _parse_course_block(self, block, dept_name: str, page_url: str):
         """Parse individual course block."""
@@ -78,7 +61,6 @@ class StanfordScraper(BaseCourseScraper):
         if not title_elem:
             return None
 
-        # Parse course code and title
         match = re.match(r'([A-Z]+)\s+(\d+[A-Z]?):?\s+(.+)', title_elem)
 
         if not match:
@@ -90,7 +72,6 @@ class StanfordScraper(BaseCourseScraper):
 
         course_id = f"{dept_code} {number}"
 
-        # Extract description
         desc_elem = block.css('.courseDescription::text').get()
         description = clean_text(desc_elem) if desc_elem else ""
 
@@ -98,7 +79,6 @@ class StanfordScraper(BaseCourseScraper):
         credits_elem = block.css('.units::text').get()
         credits = extract_credits(credits_elem) if credits_elem else 3
 
-        # Prerequisites
         prereq_text = block.css('.prerequisites::text').get()
         prereq_data = self.parse_prerequisites(prereq_text) if prereq_text else {
             'prerequisites': None,
@@ -106,7 +86,6 @@ class StanfordScraper(BaseCourseScraper):
             'prerequisites_parsed': True
         }
 
-        # Infer level
         level = self.infer_level(course_id)
 
         return self.create_course(

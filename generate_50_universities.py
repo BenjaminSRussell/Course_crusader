@@ -199,7 +199,8 @@ def main():
     print()
 
     scrapers_created = 0
-    scrapers_dir = '/home/user/Course_crusader/coursecrusader/scrapers/universities'
+    script_dir = os.path.dirname(__file__)
+    scrapers_dir = os.path.join(script_dir, 'coursecrusader', 'scrapers', 'universities')
 
     for uni in UNIVERSITIES:
         if uni.get('skip'):
@@ -229,19 +230,18 @@ def main():
     # Generate __init__.py
     print("Updating registry...")
     init_content = ""
-    all_scrapers = []
+    all_scraper_names = []
 
     for uni in UNIVERSITIES:
         class_name = uni["name"].title().replace("_", "") + "Scraper"
-        all_scrapers.append(class_name)
+        all_scraper_names.append(class_name)
         init_content += f'''try:
     from .{uni["name"]} import {class_name}
 except ImportError:
     {class_name} = None
 
 '''
-
-    init_content += f"__all__ = {all_scrapers}\n"
+    init_content += f"__all__ = {all_scraper_names}\n"
 
     with open(f"{scrapers_dir}/__init__.py", 'w') as f:
         f.write(init_content)

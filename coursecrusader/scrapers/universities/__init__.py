@@ -239,13 +239,13 @@ except ImportError:
     AsuScraper = None
 
 try:
+    from .caltech import CaltechScraper
+except ImportError:
+    CaltechScraper = None
+
+try:
     from .colorado import ColoradoScraper
 except ImportError:
     ColoradoScraper = None
 
 __all__ = ['UconnScraper', 'MitScraper', 'YaleScraper', 'StanfordScraper', 'BerkeleyScraper', 'HarvardScraper', 'CornellScraper', 'PrincetonScraper', 'ColumbiaScraper', 'UpennScraper', 'DukeScraper', 'NorthwesternScraper', 'DartmouthScraper', 'BrownScraper', 'VanderbiltScraper', 'RiceScraper', 'NotreDameScraper', 'UclaScraper', 'UcsdScraper', 'UcsbScraper', 'UciScraper', 'UcdScraper', 'UmichScraper', 'UvaScraper', 'UncScraper', 'GeorgiaTechScraper', 'UiucScraper', 'WisconsinScraper', 'WashingtonScraper', 'UtexasScraper', 'UscScraper', 'CarnegieMellonScraper', 'NyuScraper', 'BostonUScraper', 'TuftsScraper', 'RochesterScraper', 'CaseWesternScraper', 'OhioStateScraper', 'PennStateScraper', 'FloridaScraper', 'PurdueScraper', 'RutgersScraper', 'MarylandScraper', 'MinnesotaScraper', 'PittScraper', 'VirginiaTechScraper', 'IndianaScraper', 'AsuScraper', 'ColoradoScraper', 'CaltechScraper']
-
-try:
-    from .caltech import CaltechScraper
-except ImportError:
-    CaltechScraper = None

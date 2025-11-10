@@ -4,19 +4,17 @@ Parser for prerequisite requirements.
 Converts natural language prerequisite strings into structured logical expressions.
 """
 
-import re
-from typing import Optional, Dict, List, Any, Union
-
+from ..parsers import clean_text
 
 class PrerequisiteParser:
     """
     Parse prerequisite strings into structured format.
 
     Examples:
-        "CSE 1010 and CSE 1729" -> {"and": ["CSE 1010", "CSE 1729"]}
-        "MATH 1131Q or MATH 1151Q" -> {"or": ["MATH 1131Q", "MATH 1151Q"]}
-        "CSE 2100 and (MATH 2210Q or MATH 2410Q)" ->
-            {"and": ["CSE 2100", {"or": ["MATH 2210Q", "MATH 2410Q"]}]}
+        "A and B" -> {"and": ["A", "B"]}
+        "A or B" -> {"or": ["A", "B"]}
+        "A and (B or C)" ->
+            {"and": ["A", {"or": ["B", "C"]}]}
     """
 
     # Common course code pattern
@@ -75,14 +73,12 @@ class PrerequisiteParser:
         if not prereq_text or not prereq_text.strip():
             return None, True
 
-        # Clean the text
-        text = self._clean_text(prereq_text)
+        text = clean_text(prereq_text)
 
         # Check for non-course prerequisites
         non_course_reqs = self._extract_non_course_requirements(text)
 
         try:
-            # Extract course codes
             courses = self._extract_courses(text)
 
             if not courses:
@@ -91,7 +87,6 @@ class PrerequisiteParser:
                     return None, False  # Can't structure, but we have info
                 return None, True  # Nothing to parse
 
-            # Determine logical structure
             structure = self._determine_structure(text, courses)
 
             # If we have non-course requirements, note them
@@ -103,20 +98,7 @@ class PrerequisiteParser:
             return structure, structure is not None
 
         except Exception:
-            # Parsing failed
             return None, False
-
-    def _clean_text(self, text: str) -> str:
-        """Clean and normalize prerequisite text."""
-        # Remove common noise
-        text = re.sub(r'\s+', ' ', text.strip())
-        text = re.sub(r'[;,]\s*$', '', text)  # Remove trailing punctuation
-
-        # Normalize common separators
-        text = text.replace(' OR ', ' or ')
-        text = text.replace(' AND ', ' and ')
-
-        return text
 
     def _extract_courses(self, text: str) -> List[str]:
         """
@@ -158,7 +140,6 @@ class PrerequisiteParser:
         if '(' in text:
             return self._parse_nested(text, courses)
 
-        # Simple cases
         has_and = ' and ' in text_lower
         has_or = ' or ' in text_lower
 
@@ -182,7 +163,6 @@ class PrerequisiteParser:
 
         Example: "CSE 2100 and (MATH 2210Q or MATH 2410Q)"
         """
-        # Find parenthesized groups
         paren_pattern = r'\(([^)]+)\)'
         matches = list(re.finditer(paren_pattern, text))
 
@@ -196,19 +176,15 @@ class PrerequisiteParser:
             before_paren = text[:matches[0].start()].strip()
             after_paren = text[matches[0].end():].strip()
 
-            # Extract courses from parenthesized group
             paren_courses = self._extract_courses(paren_group)
 
-            # Determine operator in parentheses
             if ' or ' in paren_group.lower():
                 paren_struct = {"or": paren_courses}
             else:
                 paren_struct = {"and": paren_courses}
 
-            # Extract courses outside parentheses
             outside_courses = self._extract_courses(before_paren + " " + after_paren)
 
-            # Combine
             if ' and ' in text.lower() and '(' in text:
                 all_parts = outside_courses + [paren_struct]
                 return {"and": all_parts}
@@ -233,10 +209,8 @@ class PrerequisiteParser:
         text_lower = text.lower()
 
         if ' and ' in text_lower and ' or ' in text_lower:
-            # Too ambiguous without proper parsing
             return None
 
-        # Fallback
         return {"and": courses}
 
     def extract_corequisites(self, text: str) -> Optional[List[str]]:
@@ -248,7 +222,6 @@ class PrerequisiteParser:
         if not text:
             return None
 
-        # Look for corequisite keyword
         coreq_pattern = r'corequisite[s]?\s*:?\s*(.+?)(?:[.;]|$)'
         match = re.search(coreq_pattern, text, re.IGNORECASE)
 

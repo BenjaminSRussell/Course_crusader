@@ -14,7 +14,7 @@ from scrapy.crawler import CrawlerProcess
 from scrapy.utils.project import get_project_settings
 
 from .scrapers.registry import ScraperRegistry
-from .scrapers.universities import *  # Import all scrapers to register them
+from .scrapers.universities import *
 from .__init__ import __version__
 
 
@@ -67,7 +67,6 @@ def scrape(school: str, output: Optional[str], format: str, limit: Optional[int]
 
         coursecrusader scrape -s uconn -f json -o data.json
     """
-    # Get scraper class
     scraper_class = ScraperRegistry.get(school.lower())
 
     if not scraper_class:
@@ -77,17 +76,14 @@ def scrape(school: str, output: Optional[str], format: str, limit: Optional[int]
             click.echo(f"  - {name}", err=True)
         sys.exit(1)
 
-    # Determine output file
     if not output:
         output = f"{school.lower()}_courses.{format}"
 
     click.echo(f"🚀 Starting scrape for {scraper_class.university}")
     click.echo(f"📁 Output: {output} ({format})")
 
-    # Configure Scrapy settings
     settings = get_project_settings()
 
-    # Set output format
     feed_format = 'jsonlines' if format == 'jsonl' else format
     settings.set('FEEDS', {
         output: {
@@ -97,12 +93,10 @@ def scrape(school: str, output: Optional[str], format: str, limit: Optional[int]
         }
     })
 
-    # Set limit if specified
     if limit:
         settings.set('CLOSESPIDER_ITEMCOUNT', limit)
         click.echo(f"⚠️  Limited to {limit} courses (testing mode)")
 
-    # Run scraper
     try:
         process = CrawlerProcess(settings)
         process.crawl(scraper_class)
@@ -153,7 +147,6 @@ def validate(file: str, limit: Optional[int]):
     click.echo(f"🔍 Validating: {file}\n")
 
     try:
-        # Read file
         courses = []
         file_path = Path(file)
 
@@ -170,7 +163,6 @@ def validate(file: str, limit: Optional[int]):
             click.echo(f"❌ Unsupported file format: {file_path.suffix}", err=True)
             sys.exit(1)
 
-        # Validate courses
         from .models import Course
 
         total = len(courses)
@@ -198,7 +190,6 @@ def validate(file: str, limit: Optional[int]):
                     'errors': [str(e)]
                 })
 
-        # Report results
         click.echo(f"📊 Validation Results:")
         click.echo(f"  Total courses: {total}")
         click.echo(f"  Valid courses: {valid}")
@@ -207,7 +198,7 @@ def validate(file: str, limit: Optional[int]):
 
         if errors:
             click.echo("⚠️  Validation Errors:\n")
-            for error in errors[:10]:  # Show first 10 errors
+            for error in errors[:10]:
                 click.echo(f"  {error['course']}:")
                 for err in error['errors']:
                     click.echo(f"    - {err}")
@@ -266,7 +257,6 @@ def merge(files: tuple, output: str):
             click.echo(f"❌ Error reading {file_path}: {e}", err=True)
             sys.exit(1)
 
-    # Write merged output
     output_path = Path(output)
 
     try:
@@ -328,7 +318,6 @@ def import_db(file: str, database: str):
         file_path = Path(file)
         count = 0
 
-        # Read and import courses
         if file_path.suffix == '.jsonl':
             with open(file_path, 'r', encoding='utf-8') as f:
                 for line in f:

@@ -55,7 +55,6 @@ class TestURLCapture:
             department="CS"
         )
 
-        # Should not raise error
         assert course.catalog_url is None
 
     def test_database_stores_url(self):

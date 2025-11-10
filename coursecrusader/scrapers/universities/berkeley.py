@@ -40,10 +40,8 @@ class BerkeleyScraper(BaseCourseScraper):
         """Parse the main courses page."""
         self.logger.info(f"Parsing Berkeley courses: {response.url}")
 
-        # Find department links
         dept_links = response.css('a[href*="/courses/"]::attr(href)').getall()
 
-        # Filter for actual department pages
         dept_links = [l for l in dept_links if re.search(r'/courses/[a-z]+/$', l.lower())]
 
         self.logger.info(f"Found {len(dept_links)} departments")
@@ -60,14 +58,8 @@ class BerkeleyScraper(BaseCourseScraper):
         self.logger.info(f"Found {len(course_blocks)} courses in {dept_name}")
 
         for block in course_blocks:
-            try:
-                course = self._parse_course_block(block, dept_name, response.url)
-                if course:
-                    self.log_parse_success(course)
-                    yield course
-                    self.stats['courses_scraped'] += 1
-            except Exception as e:
-                self.log_parse_failure(response.url, str(e))
+            course = self._parse_course_block(block, dept_name, response.url)
+            yield from self._process_course_block(course, response.url)
 
     def _parse_course_block(self, block, dept_name: str, page_url: str):
         """Parse course block."""
@@ -77,7 +69,6 @@ class BerkeleyScraper(BaseCourseScraper):
         if not title_elem:
             return None
 
-        # Parse title
         pattern = r'([A-Z]+)\s+(\d+[A-Z]?)\.\s+(.+?)(?:\.\s+(\d+)\s+Units?)?'
         match = re.match(pattern, title_elem)
 
@@ -91,11 +82,9 @@ class BerkeleyScraper(BaseCourseScraper):
 
         course_id = f"{dept_code} {number}"
 
-        # Description
         desc_elem = block.css('.courseblockdesc::text').get()
         description = clean_text(desc_elem) if desc_elem else ""
 
-        # Prerequisites
         prereq_text = block.css('.prereq::text').get()
         prereq_data = self.parse_prerequisites(prereq_text) if prereq_text else {
             'prerequisites': None,
