@@ -179,14 +179,30 @@ class MITScraper(BaseCourseScraper):
 
     def _infer_mit_level(self, course_num: str) -> str:
         """Infer course level from MIT course number."""
-        # Extract numeric part
-        match = re.match(r'(\d+)\.', course_num)
-        if not match:
+        # Split the string by the dot
+        parts = course_num.split('.')
+
+        # The course number is the second part
+        if len(parts) > 1:
+            num_str = parts[1]
+        else:
+            num_str = parts[0]
+
+        # remove non numeric characters
+        num_str = ''.join(filter(str.isdigit, num_str))
+
+        if not num_str:
             return "Unknown"
 
-        # MIT graduate courses are typically numbered differently by department
-        # This is a simplification
-        return "Undergraduate"  # Would need department-specific logic
+        try:
+            num = int(num_str)
+        except (ValueError, IndexError):
+            return "Unknown"
+
+        if num >= 500:
+            return "Graduate"
+        else:
+            return "Undergraduate"
 
     def _extract_prerequisites(self, text: str, description: str) -> dict:
         """Extract prerequisites from course text."""
