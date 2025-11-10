@@ -1,12 +1,12 @@
 try:
-    from .uconn import UConnScraper
+    from .uconn import UconnScraper
 except ImportError:
-    UConnScraper = None
+    UconnScraper = None
 
 try:
-    from .mit import MITScraper
+    from .mit import MitScraper
 except ImportError:
-    MITScraper = None
+    MitScraper = None
 
 try:
     from .yale import YaleScraper
@@ -39,27 +39,213 @@ except ImportError:
     PrincetonScraper = None
 
 try:
-    from .test import TestScraper
+    from .columbia import ColumbiaScraper
 except ImportError:
-    TestScraper = None
+    ColumbiaScraper = None
 
 try:
-    from .test1 import Test1Scraper
+    from .upenn import UpennScraper
 except ImportError:
-    Test1Scraper = None
+    UpennScraper = None
 
 try:
-    from .test2 import Test2Scraper
+    from .duke import DukeScraper
 except ImportError:
-    Test2Scraper = None
+    DukeScraper = None
 
 try:
-    from .test3 import Test3Scraper
+    from .northwestern import NorthwesternScraper
 except ImportError:
-    Test3Scraper = None
+    NorthwesternScraper = None
 
-__all__ = [
-    'UConnScraper', 'MITScraper', 'YaleScraper', 'StanfordScraper',
-    'BerkeleyScraper', 'HarvardScraper', 'CornellScraper', 'PrincetonScraper',
-    'TestScraper', 'Test1Scraper', 'Test2Scraper', 'Test3Scraper',
-]
+try:
+    from .dartmouth import DartmouthScraper
+except ImportError:
+    DartmouthScraper = None
+
+try:
+    from .brown import BrownScraper
+except ImportError:
+    BrownScraper = None
+
+try:
+    from .vanderbilt import VanderbiltScraper
+except ImportError:
+    VanderbiltScraper = None
+
+try:
+    from .rice import RiceScraper
+except ImportError:
+    RiceScraper = None
+
+try:
+    from .notre_dame import NotreDameScraper
+except ImportError:
+    NotreDameScraper = None
+
+try:
+    from .ucla import UclaScraper
+except ImportError:
+    UclaScraper = None
+
+try:
+    from .ucsd import UcsdScraper
+except ImportError:
+    UcsdScraper = None
+
+try:
+    from .ucsb import UcsbScraper
+except ImportError:
+    UcsbScraper = None
+
+try:
+    from .uci import UciScraper
+except ImportError:
+    UciScraper = None
+
+try:
+    from .ucd import UcdScraper
+except ImportError:
+    UcdScraper = None
+
+try:
+    from .umich import UmichScraper
+except ImportError:
+    UmichScraper = None
+
+try:
+    from .uva import UvaScraper
+except ImportError:
+    UvaScraper = None
+
+try:
+    from .unc import UncScraper
+except ImportError:
+    UncScraper = None
+
+try:
+    from .georgia_tech import GeorgiaTechScraper
+except ImportError:
+    GeorgiaTechScraper = None
+
+try:
+    from .uiuc import UiucScraper
+except ImportError:
+    UiucScraper = None
+
+try:
+    from .wisconsin import WisconsinScraper
+except ImportError:
+    WisconsinScraper = None
+
+try:
+    from .washington import WashingtonScraper
+except ImportError:
+    WashingtonScraper = None
+
+try:
+    from .utexas import UtexasScraper
+except ImportError:
+    UtexasScraper = None
+
+try:
+    from .usc import UscScraper
+except ImportError:
+    UscScraper = None
+
+try:
+    from .carnegie_mellon import CarnegieMellonScraper
+except ImportError:
+    CarnegieMellonScraper = None
+
+try:
+    from .nyu import NyuScraper
+except ImportError:
+    NyuScraper = None
+
+try:
+    from .boston_u import BostonUScraper
+except ImportError:
+    BostonUScraper = None
+
+try:
+    from .tufts import TuftsScraper
+except ImportError:
+    TuftsScraper = None
+
+try:
+    from .rochester import RochesterScraper
+except ImportError:
+    RochesterScraper = None
+
+try:
+    from .case_western import CaseWesternScraper
+except ImportError:
+    CaseWesternScraper = None
+
+try:
+    from .ohio_state import OhioStateScraper
+except ImportError:
+    OhioStateScraper = None
+
+try:
+    from .penn_state import PennStateScraper
+except ImportError:
+    PennStateScraper = None
+
+try:
+    from .florida import FloridaScraper
+except ImportError:
+    FloridaScraper = None
+
+try:
+    from .purdue import PurdueScraper
+except ImportError:
+    PurdueScraper = None
+
+try:
+    from .rutgers import RutgersScraper
+except ImportError:
+    RutgersScraper = None
+
+try:
+    from .maryland import MarylandScraper
+except ImportError:
+    MarylandScraper = None
+
+try:
+    from .minnesota import MinnesotaScraper
+except ImportError:
+    MinnesotaScraper = None
+
+try:
+    from .pitt import PittScraper
+except ImportError:
+    PittScraper = None
+
+try:
+    from .virginia_tech import VirginiaTechScraper
+except ImportError:
+    VirginiaTechScraper = None
+
+try:
+    from .indiana import IndianaScraper
+except ImportError:
+    IndianaScraper = None
+
+try:
+    from .asu import AsuScraper
+except ImportError:
+    AsuScraper = None
+
+try:
+    from .colorado import ColoradoScraper
+except ImportError:
+    ColoradoScraper = None
+
+__all__ = ['UconnScraper', 'MitScraper', 'YaleScraper', 'StanfordScraper', 'BerkeleyScraper', 'HarvardScraper', 'CornellScraper', 'PrincetonScraper', 'ColumbiaScraper', 'UpennScraper', 'DukeScraper', 'NorthwesternScraper', 'DartmouthScraper', 'BrownScraper', 'VanderbiltScraper', 'RiceScraper', 'NotreDameScraper', 'UclaScraper', 'UcsdScraper', 'UcsbScraper', 'UciScraper', 'UcdScraper', 'UmichScraper', 'UvaScraper', 'UncScraper', 'GeorgiaTechScraper', 'UiucScraper', 'WisconsinScraper', 'WashingtonScraper', 'UtexasScraper', 'UscScraper', 'CarnegieMellonScraper', 'NyuScraper', 'BostonUScraper', 'TuftsScraper', 'RochesterScraper', 'CaseWesternScraper', 'OhioStateScraper', 'PennStateScraper', 'FloridaScraper', 'PurdueScraper', 'RutgersScraper', 'MarylandScraper', 'MinnesotaScraper', 'PittScraper', 'VirginiaTechScraper', 'IndianaScraper', 'AsuScraper', 'ColoradoScraper', 'CaltechScraper']
+
+try:
+    from .caltech import CaltechScraper
+except ImportError:
+    CaltechScraper = None
