@@ -1,11 +1,3 @@
-"""
-University-specific scrapers.
-
-Each module in this package implements a scraper for a specific university.
-All scrapers are automatically registered via the @register_scraper decorator.
-"""
-
-# Import all university scrapers to auto-register them
 try:
     from .uconn import UConnScraper
 except ImportError:
@@ -46,13 +38,28 @@ try:
 except ImportError:
     PrincetonScraper = None
 
+try:
+    from .test import TestScraper
+except ImportError:
+    TestScraper = None
+
+try:
+    from .test1 import Test1Scraper
+except ImportError:
+    Test1Scraper = None
+
+try:
+    from .test2 import Test2Scraper
+except ImportError:
+    Test2Scraper = None
+
+try:
+    from .test3 import Test3Scraper
+except ImportError:
+    Test3Scraper = None
+
 __all__ = [
-    'UConnScraper',
-    'MITScraper',
-    'YaleScraper',
-    'StanfordScraper',
-    'BerkeleyScraper',
-    'HarvardScraper',
-    'CornellScraper',
-    'PrincetonScraper',
+    'UConnScraper', 'MITScraper', 'YaleScraper', 'StanfordScraper',
+    'BerkeleyScraper', 'HarvardScraper', 'CornellScraper', 'PrincetonScraper',
+    'TestScraper', 'Test1Scraper', 'Test2Scraper', 'Test3Scraper',
 ]
