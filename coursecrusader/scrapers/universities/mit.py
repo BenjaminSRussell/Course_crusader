@@ -13,6 +13,7 @@ from ...parsers import clean_text, extract_credits
 
 @register_scraper
 class MITScraper(BaseCourseScraper):
+    readiness = "READY"
     """
     Scraper for MIT course catalog.
 

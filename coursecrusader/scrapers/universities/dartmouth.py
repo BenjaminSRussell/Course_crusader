@@ -7,6 +7,7 @@ from ..registry import register_scraper
 class DartmouthScraper(BaseCourseScraper):
     name = "dartmouth"
     university = "Dartmouth College"
+    readiness = "STUB"
     start_urls = ['https://httpbin.org/html']
 
     custom_settings = {

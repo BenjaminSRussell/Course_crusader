@@ -11,6 +11,8 @@ from ..parsers import PrerequisiteParser, clean_text, extract_credits
 class BaseCourseScraper(scrapy.Spider, ABC):
     name: str = "base_scraper"
     university: str = "Unknown"
+    # READY = live catalog parser; STUB = httpbin/demo sample courses (#7)
+    readiness: str = "STUB"
     custom_settings = {
         'FEEDS': {
             'courses.jsonl': {

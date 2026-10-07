@@ -44,3 +44,8 @@ crontab scripts/crontab.example   # edit paths first
 ## License
 
 MIT — see `LICENSE`.
+
+
+## Scraper readiness
+
+See [docs/SCRAPER_STATUS.md](docs/SCRAPER_STATUS.md) (regenerate with `coursecrusader status --write`). `coursecrusader list` shows READY vs STUB.

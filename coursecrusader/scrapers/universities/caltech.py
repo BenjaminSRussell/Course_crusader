@@ -7,6 +7,7 @@ from ..registry import register_scraper
 class CaltechScraper(BaseCourseScraper):
     name = "caltech"
     university = "California Institute of Technology"
+    readiness = "STUB"
     start_urls = ['https://httpbin.org/html']
 
     custom_settings = {

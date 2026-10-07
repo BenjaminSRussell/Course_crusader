@@ -15,6 +15,7 @@ from ...parsers import clean_text, extract_credits
 
 @register_scraper
 class BerkeleyScraper(BaseCourseScraper):
+    readiness = "READY"
     """
     Scraper for UC Berkeley course catalog.
     """

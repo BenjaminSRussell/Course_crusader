@@ -9,6 +9,7 @@ from ...parsers import clean_text, extract_credits
 class CaseWesternScraper(BaseCourseScraper):
     name = "case_western"
     university = "Case Western Reserve University"
+    readiness = "READY"
     start_urls = ['https://bulletin.case.edu/course-descriptions/']
 
     custom_settings = {

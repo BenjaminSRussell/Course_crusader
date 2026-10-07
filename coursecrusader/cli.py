@@ -109,25 +109,42 @@ def scrape(school: str, output: Optional[str], format: str, limit: Optional[int]
         sys.exit(1)
 
 
-@main.command()
-def list():
-    """
-    List all available university scrapers.
-    """
-    scrapers = ScraperRegistry.get_all()
+@main.command("list")
+def list_scrapers_cmd():
+    """List university scrapers with READY/STUB status (#7)."""
+    from .scrapers.registry import readiness_matrix
 
-    if not scrapers:
+    rows = readiness_matrix()
+    if not rows:
         click.echo("No scrapers registered.")
         return
 
-    click.echo("📚 Available University Scrapers:\n")
+    click.echo("Available University Scrapers:\n")
+    click.echo(f"  {'key':15} {'status':6}  university")
+    click.echo(f"  {'-'*15} {'-'*6}  {'-'*20}")
+    for name, university, status in rows:
+        click.echo(f"  {name:15} {status:6}  {university}")
+    ready = sum(1 for *_, s in rows if s == "READY")
+    stub = sum(1 for *_, s in rows if s == "STUB")
+    click.echo(f"\nTotal: {len(rows)} scrapers ({ready} READY, {stub} STUB)")
+    click.echo("Usage: coursecrusader scrape --school <name>")
+    click.echo("Docs:  docs/SCRAPER_STATUS.md (coursecrusader status --write)")
 
-    for name, scraper_class in sorted(scrapers.items()):
-        university = scraper_class.university
-        click.echo(f"  {name:15} - {university}")
 
-    click.echo(f"\nTotal: {len(scrapers)} scrapers")
-    click.echo("\nUsage: coursecrusader scrape --school <name>")
+@main.command()
+@click.option("--write", "do_write", is_flag=True, help="Regenerate docs/SCRAPER_STATUS.md")
+def status(do_write: bool):
+    """Show or regenerate the scraper readiness matrix (#7)."""
+    from .scrapers.registry import readiness_matrix, write_status_md
+
+    rows = readiness_matrix()
+    ready = sum(1 for *_, s in rows if s == "READY")
+    stub = sum(1 for *_, s in rows if s == "STUB")
+    click.echo(f"{ready} READY / {stub} STUB / {len(rows)} total")
+    if do_write:
+        path = write_status_md()
+        click.echo(f"Wrote {path}")
+
 
 
 @main.command()
@@ -453,12 +470,7 @@ def search(query: str, database: str, university: Optional[str], limit: int):
         click.echo(f"❌ Error: {e}", err=True)
         sys.exit(1)
 
-
-if __name__ == '__main__':
-    main()
-
-
-@cli.command('corequisite')
+@main.command('corequisite')
 @click.argument('course_id')
 @click.option(
     '--database',
@@ -488,7 +500,7 @@ def corequisite(course_id: str, database: str, university: Optional[str]):
         db.close()
 
 
-@cli.command('offered')
+@main.command('offered')
 @click.argument('term')
 @click.option(
     '--database',
@@ -518,3 +530,6 @@ def offered(term: str, database: str):
         raise SystemExit(2)
     finally:
         db.close()
+
+if __name__ == '__main__':
+    main()
