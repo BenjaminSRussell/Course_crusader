@@ -210,7 +210,7 @@ class PDFCatalogParser:
         if course_pattern is None:
             # Default pattern: Department code followed by number and period
             # Example: "CSE 2100. Data Structures"
-            course_pattern = r"\n([A-Z]{2,6})\s+(\d{3,4}[A-Z]?)\.\s+"
+            course_pattern = r"([A-Z]{2,6})\s+(\d{3,4}[A-Z]?)\.\s+"
 
         matches = list(re.finditer(course_pattern, text))
 
@@ -287,16 +287,35 @@ class PDFCatalogParser:
         if credits is None:
             credits = extract_credits(full_desc)
 
+        prereq_text = None
+        # Prefer full text (single-line PDF dumps keep prereqs on first line)
+        search_blob = first_line + " " + full_desc
         prereq_match = re.search(
-            r"(?:prerequisite|prereq)[s]?\s*:\s*([^.]+)", full_desc, re.IGNORECASE
+            r"(?:prerequisite|prereq)[s]?\s*:\s*([^.]+)", search_blob, re.IGNORECASE
         )
         if prereq_match:
             prereq_text = prereq_match.group(1).strip()
 
+        # Credits on same line as title (common in PDF dumps)
+        if credits is None:
+            credits = extract_credits(search_blob)
+
+        # If description empty, use remainder after title on first line
+        desc = full_desc.strip()
+        if not desc and "." in first_line:
+            # strip leading "DEPT NUM. Title"
+            rest = re.sub(
+                rf"^{re.escape(dept)}\s+{re.escape(number)}\.\s*{re.escape(title)}\.?\s*",
+                "",
+                first_line,
+                flags=re.I,
+            )
+            desc = rest.strip() or title
+
         return {
             "course_id": course_id,
-            "title": title,
-            "description": full_desc.strip(),
+            "title": title.split("Credits")[0].strip().rstrip("."),
+            "description": desc,
             "credits": credits,
             "prerequisites_text": prereq_text,
         }

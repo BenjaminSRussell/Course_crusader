@@ -533,6 +533,75 @@ def explore_cmd(database: str, host: str, port: int):
     explore_main(db_path=database, host=host, port=port)
 
 
+
+
+@main.command("ingest-pdf")
+@click.option("--university", "-u", required=True)
+@click.option("--file", "-f", "pdf_path", type=click.Path(exists=True), required=True)
+@click.option("--database", "-d", default=None, help="If set, upsert into SQLite")
+@click.option("--output", "-o", default=None, help="JSONL output path")
+@click.option("--department", default="Unknown")
+def ingest_pdf(university: str, pdf_path: str, database: Optional[str], output: Optional[str], department: str):
+    """Ingest a PDF catalog into Course rows (#10)."""
+    from .parsers.pdf_parser import PDFCatalogParser
+    from .models import Course
+    from .database import CourseDatabase
+
+    try:
+        parser = PDFCatalogParser()
+        text = parser.parse_pdf_file(pdf_path)
+    except Exception as e:
+        click.echo(f"Failed to read PDF: {e}", err=True)
+        sys.exit(1)
+
+    if not text.strip():
+        click.echo("PDF produced no extractable text", err=True)
+        sys.exit(1)
+
+    chunks = parser.split_into_courses(text)
+    courses = []
+    for chunk in chunks:
+        data = parser.extract_course_from_text(chunk)
+        if not data:
+            continue
+        try:
+            course = Course(
+                university=university,
+                course_id=data.get("course_id") or data.get("code") or "",
+                title=data.get("title") or "Untitled",
+                description=data.get("description") or chunk[:500],
+                credits=data.get("credits") or 3,
+                level=Course.infer_level(data.get("course_id") or ""),
+                department=data.get("department") or department,
+                prerequisites_text=data.get("prerequisites"),
+            )
+            ok, errs = course.validate()
+            if not ok:
+                click.echo(f"skip invalid {course.course_id}: {errs}", err=True)
+                continue
+            courses.append(course)
+        except Exception as e:
+            click.echo(f"skip: {e}", err=True)
+
+    if not courses:
+        click.echo("No validated courses extracted from PDF", err=True)
+        sys.exit(1)
+
+    click.echo(f"Extracted {len(courses)} courses from {pdf_path}")
+    if database:
+        with CourseDatabase(database) as db:
+            for c in courses:
+                db.insert_course(c)
+        click.echo(f"Upserted into {database}")
+    if output:
+        with open(output, "w", encoding="utf-8") as fh:
+            for c in courses:
+                fh.write(json.dumps(c.to_dict()) + "\n")
+        click.echo(f"Wrote {output}")
+    for c in courses[:5]:
+        click.echo(f"  {c.course_id}: {c.title}")
+
+
 @main.command()
 @click.argument("query")
 @click.option(
