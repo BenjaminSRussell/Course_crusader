@@ -49,3 +49,8 @@ MIT — see `LICENSE`.
 ## Scraper readiness
 
 See [docs/SCRAPER_STATUS.md](docs/SCRAPER_STATUS.md) (regenerate with `coursecrusader status --write`). `coursecrusader list` shows READY vs STUB.
+
+## Politeness (#12)
+
+`ROBOTSTXT_OBEY=True` with Scrapy `RobotsTxtMiddleware`. Default `DOWNLOAD_DELAY=1.0`; schools override via scraper `custom_settings` (e.g. UConn `1.5`).
+`PolitenessLoggingMiddleware` logs robots skips and effective delay.
