@@ -94,15 +94,12 @@ class CourseDatabase:
 
         self.conn.commit()
 
-    def insert_course(self, course: Course) -> int:
+    def insert_course(self, course: Course) -> Dict[str, Any]:
         """
-        Insert a course into the database.
-
-        Args:
-            course: Course object to insert
+        Insert or update a course.
 
         Returns:
-            Row ID of inserted course
+            Dict with row_id, added (0|1), updated (0|1).
         """
         cursor = self.conn.cursor()
 
@@ -110,13 +107,29 @@ class CourseDatabase:
         corequisites_json = json.dumps(course.corequisites) if course.corequisites else None
         offerings_json = json.dumps(course.offerings) if course.offerings else None
 
+        existing = self.get_course(course.university, course.course_id)
         cursor.execute("""
-            INSERT OR REPLACE INTO courses (
+            INSERT INTO courses (
                 university, course_id, title, description, credits, level,
                 department, prerequisites_text, prerequisites_json,
                 prerequisites_parsed, corequisites_json, restrictions,
                 offerings_json, catalog_url, last_updated, notes
             ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ON CONFLICT(university, course_id) DO UPDATE SET
+                title=excluded.title,
+                description=excluded.description,
+                credits=excluded.credits,
+                level=excluded.level,
+                department=excluded.department,
+                prerequisites_text=excluded.prerequisites_text,
+                prerequisites_json=excluded.prerequisites_json,
+                prerequisites_parsed=excluded.prerequisites_parsed,
+                corequisites_json=excluded.corequisites_json,
+                restrictions=excluded.restrictions,
+                offerings_json=excluded.offerings_json,
+                catalog_url=excluded.catalog_url,
+                last_updated=excluded.last_updated,
+                notes=excluded.notes
         """, (
             course.university,
             course.course_id,
@@ -137,24 +150,30 @@ class CourseDatabase:
         ))
 
         self.conn.commit()
-        return cursor.lastrowid
+        row = self.get_course(course.university, course.course_id)
+        row_id = row["id"] if row else cursor.lastrowid
+        if existing:
+            return {"row_id": row_id, "added": 0, "updated": 1}
+        return {"row_id": row_id, "added": 1, "updated": 0}
 
-    def insert_courses_bulk(self, courses: List[Course]) -> int:
+    def insert_courses_bulk(self, courses: List[Course]) -> Dict[str, int]:
         """
-        Insert multiple courses efficiently.
-
-        Args:
-            courses: List of Course objects
+        Insert multiple courses in one transaction.
 
         Returns:
-            Number of courses inserted
+            {"added": n, "updated": m}
         """
-        count = 0
-        for course in courses:
-            self.insert_course(course)
-            count += 1
-
-        return count
+        added = 0
+        updated = 0
+        try:
+            for course in courses:
+                result = self.insert_course(course)
+                added += result["added"]
+                updated += result["updated"]
+            return {"added": added, "updated": updated}
+        except Exception:
+            self.conn.rollback()
+            raise
 
     def get_course(self, university: str, course_id: str) -> Optional[Dict]:
         """
@@ -222,35 +241,63 @@ class CourseDatabase:
     def search_courses(
         self,
         query: str,
-        university: Optional[str] = None
-    ) -> List[Dict]:
+        university: Optional[str] = None,
+        limit: int = 50,
+        offset: int = 0,
+    ) -> Dict[str, Any]:
         """
-        Search courses by title or description.
-
-        Args:
-            query: Search query
-            university: Optional university filter
+        Search courses by title or description with pagination.
 
         Returns:
-            List of matching course dictionaries
+            {"rows": [...], "total": int, "truncated": bool}
         """
         cursor = self.conn.cursor()
+        q = (query or "").strip()
+        if not q:
+            return {"rows": [], "total": 0, "truncated": False}
+
+        limit = max(1, min(int(limit), 200))
+        offset = max(0, int(offset))
+        like = f"%{q}%"
 
         if university:
-            cursor.execute("""
+            count_sql = """
+                SELECT COUNT(*) FROM courses
+                WHERE university = ?
+                AND (title LIKE ? OR description LIKE ?)
+            """
+            count_args = (university, like, like)
+            data_sql = """
                 SELECT * FROM courses
                 WHERE university = ?
                 AND (title LIKE ? OR description LIKE ?)
                 ORDER BY course_id
-            """, (university, f"%{query}%", f"%{query}%"))
+                LIMIT ? OFFSET ?
+            """
+            data_args = (university, like, like, limit, offset)
         else:
-            cursor.execute("""
+            count_sql = """
+                SELECT COUNT(*) FROM courses
+                WHERE title LIKE ? OR description LIKE ?
+            """
+            count_args = (like, like)
+            data_sql = """
                 SELECT * FROM courses
                 WHERE title LIKE ? OR description LIKE ?
                 ORDER BY university, course_id
-            """, (f"%{query}%", f"%{query}%"))
+                LIMIT ? OFFSET ?
+            """
+            data_args = (like, like, limit, offset)
 
-        return [dict(row) for row in cursor.fetchall()]
+        cursor.execute(count_sql, count_args)
+        total = cursor.fetchone()[0]
+        cursor.execute(data_sql, data_args)
+        rows = [dict(row) for row in cursor.fetchall()]
+        return {
+            "rows": rows,
+            "total": total,
+            "truncated": total > offset + len(rows),
+        }
 
     def get_statistics(self) -> Dict[str, Any]:
         """

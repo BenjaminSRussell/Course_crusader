@@ -23,7 +23,7 @@ class PrerequisiteParser:
     """
 
     # Common course code pattern
-    COURSE_PATTERN = r'\b([A-Z]{2,6})\s*(\d{3,4}[A-Z]?)\b'
+    COURSE_PATTERN = r'\b([A-Z]{2,6})[\s-]*(\d{3,4}[A-Z]?)\b'
 
     # Keywords that indicate non-course prerequisites
     NON_COURSE_KEYWORDS = [
