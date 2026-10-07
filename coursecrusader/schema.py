@@ -17,41 +17,32 @@ COURSE_SCHEMA = {
         "description",
         "credits",
         "level",
-        "department"
+        "department",
     ],
     "properties": {
         "university": {
             "type": "string",
-            "description": "University/institution identifier (e.g., 'UConn', 'MIT')"
+            "description": "University/institution identifier (e.g., 'UConn', 'MIT')",
         },
         "course_id": {
             "type": "string",
             "description": "Course code/identifier (e.g., 'CSE 2100', 'CS 101')",
-            "pattern": "^[A-Z]{2,6}\\s*\\d{3,4}[A-Z]?$"
+            "pattern": "^[A-Z]{2,6}\\s*\\d{3,4}[A-Z]?$",
         },
-        "title": {
-            "type": "string",
-            "description": "Course title"
-        },
-        "description": {
-            "type": "string",
-            "description": "Full course description"
-        },
+        "title": {"type": "string", "description": "Course title"},
+        "description": {"type": "string", "description": "Full course description"},
         "credits": {
-            "oneOf": [
-                {"type": "number"},
-                {"type": "string", "pattern": "^\\d+(-\\d+)?$"}
-            ],
-            "description": "Credit hours (number or range like '3-4')"
+            "oneOf": [{"type": "number"}, {"type": "string", "pattern": "^\\d+(-\\d+)?$"}],
+            "description": "Credit hours (number or range like '3-4')",
         },
         "level": {
             "type": "string",
             "enum": ["Undergraduate", "Graduate", "Professional", "Unknown"],
-            "description": "Course level classification"
+            "description": "Course level classification",
         },
         "department": {
             "type": "string",
-            "description": "Department or academic unit offering the course"
+            "description": "Department or academic unit offering the course",
         },
         "prerequisites": {
             "type": "object",
@@ -60,63 +51,54 @@ COURSE_SCHEMA = {
                 "and": {
                     "type": "array",
                     "items": {
-                        "oneOf": [
-                            {"type": "string"},
-                            {"$ref": "#/properties/prerequisites"}
-                        ]
-                    }
+                        "oneOf": [{"type": "string"}, {"$ref": "#/properties/prerequisites"}]
+                    },
                 },
                 "or": {
                     "type": "array",
                     "items": {
-                        "oneOf": [
-                            {"type": "string"},
-                            {"$ref": "#/properties/prerequisites"}
-                        ]
-                    }
-                }
-            }
+                        "oneOf": [{"type": "string"}, {"$ref": "#/properties/prerequisites"}]
+                    },
+                },
+            },
         },
         "prerequisites_text": {
             "type": "string",
-            "description": "Original prerequisite text as it appears in catalog"
+            "description": "Original prerequisite text as it appears in catalog",
         },
         "prerequisites_parsed": {
             "type": "boolean",
-            "description": "Flag indicating if prerequisites were successfully parsed into structured form"
+            "description": "Flag indicating if prerequisites were successfully parsed into structured form",
         },
         "corequisites": {
             "type": "array",
             "items": {"type": "string"},
-            "description": "Courses that must be taken concurrently"
+            "description": "Courses that must be taken concurrently",
         },
         "restrictions": {
             "type": "string",
-            "description": "Enrollment restrictions (e.g., 'Junior standing required', 'Major only')"
+            "description": "Enrollment restrictions (e.g., 'Junior standing required', 'Major only')",
         },
         "offerings": {
             "type": "array",
             "items": {
                 "type": "string",
-                "enum": ["Fall", "Spring", "Summer", "Winter", "Year-round"]
+                "enum": ["Fall", "Spring", "Summer", "Winter", "Year-round"],
             },
-            "description": "Semesters/terms when course is typically offered"
+            "description": "Semesters/terms when course is typically offered",
         },
         "catalog_url": {
             "type": "string",
             "format": "uri",
-            "description": "URL to the course's catalog page"
+            "description": "URL to the course's catalog page",
         },
         "last_updated": {
             "type": "string",
             "format": "date-time",
-            "description": "Timestamp when this data was last scraped"
+            "description": "Timestamp when this data was last scraped",
         },
-        "notes": {
-            "type": "string",
-            "description": "Additional notes or parsing uncertainties"
-        }
-    }
+        "notes": {"type": "string", "description": "Additional notes or parsing uncertainties"},
+    },
 }
 
 
@@ -127,6 +109,7 @@ def validate_course_schema():
     """
     try:
         import jsonschema
+
         # Ensure the schema is valid JSON Schema
         jsonschema.Draft7Validator.check_schema(COURSE_SCHEMA)
         return True
@@ -140,6 +123,7 @@ if __name__ == "__main__":
     if validate_course_schema():
         print("Course schema is valid!")
         import json
+
         print(json.dumps(COURSE_SCHEMA, indent=2))
     else:
         print("Course schema has errors!")

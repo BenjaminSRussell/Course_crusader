@@ -23,16 +23,14 @@ class BerkeleyScraper(BaseCourseScraper):
     name = "berkeley"
     university = "University of California, Berkeley"
 
-    start_urls = [
-        'https://guide.berkeley.edu/courses/'
-    ]
+    start_urls = ["https://guide.berkeley.edu/courses/"]
 
     custom_settings = {
-        'FEEDS': {
-            'berkeley_courses.jsonl': {
-                'format': 'jsonlines',
-                'encoding': 'utf-8',
-                'overwrite': True,
+        "FEEDS": {
+            "berkeley_courses.jsonl": {
+                "format": "jsonlines",
+                "encoding": "utf-8",
+                "overwrite": True,
             },
         },
     }
@@ -43,7 +41,7 @@ class BerkeleyScraper(BaseCourseScraper):
 
         dept_links = response.css('a[href*="/courses/"]::attr(href)').getall()
 
-        dept_links = [l for l in dept_links if re.search(r'/courses/[a-z]+/$', l.lower())]
+        dept_links = [l for l in dept_links if re.search(r"/courses/[a-z]+/$", l.lower())]
 
         self.logger.info(f"Found {len(dept_links)} departments")
 
@@ -52,9 +50,9 @@ class BerkeleyScraper(BaseCourseScraper):
 
     def parse_department(self, response):
         """Parse department page."""
-        dept_name = response.css('h1.page-title::text').get() or "Unknown"
+        dept_name = response.css("h1.page-title::text").get() or "Unknown"
 
-        course_blocks = response.css('.courseblock')
+        course_blocks = response.css(".courseblock")
 
         self.logger.info(f"Found {len(course_blocks)} courses in {dept_name}")
 
@@ -65,12 +63,12 @@ class BerkeleyScraper(BaseCourseScraper):
     def _parse_course_block(self, block, dept_name: str, page_url: str):
         """Parse course block."""
         # Berkeley format: "COMPSCI 61A. Structure and Interpretation of Computer Programs. 4 Units."
-        title_elem = block.css('.courseblocktitle::text').get()
+        title_elem = block.css(".courseblocktitle::text").get()
 
         if not title_elem:
             return None
 
-        pattern = r'([A-Z]+)\s+(\d+[A-Z]?)\.\s+(.+?)(?:\.\s+(\d+)\s+Units?)?'
+        pattern = r"([A-Z]+)\s+(\d+[A-Z]?)\.\s+(.+?)(?:\.\s+(\d+)\s+Units?)?"
         match = re.match(pattern, title_elem)
 
         if not match:
@@ -83,15 +81,15 @@ class BerkeleyScraper(BaseCourseScraper):
 
         course_id = f"{dept_code} {number}"
 
-        desc_elem = block.css('.courseblockdesc::text').get()
+        desc_elem = block.css(".courseblockdesc::text").get()
         description = clean_text(desc_elem) if desc_elem else ""
 
-        prereq_text = block.css('.prereq::text').get()
-        prereq_data = self.parse_prerequisites(prereq_text) if prereq_text else {
-            'prerequisites': None,
-            'prerequisites_text': None,
-            'prerequisites_parsed': True
-        }
+        prereq_text = block.css(".prereq::text").get()
+        prereq_data = (
+            self.parse_prerequisites(prereq_text)
+            if prereq_text
+            else {"prerequisites": None, "prerequisites_text": None, "prerequisites_parsed": True}
+        )
 
         level = self.infer_level(course_id)
 
@@ -103,5 +101,5 @@ class BerkeleyScraper(BaseCourseScraper):
             level=level,
             department=dept_name,
             catalog_url=page_url,
-            **prereq_data
+            **prereq_data,
         )

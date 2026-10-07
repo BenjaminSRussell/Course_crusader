@@ -9,7 +9,7 @@ from coursecrusader.parsers.text_utils import (
     normalize_whitespace,
     fix_broken_lines,
     extract_credits,
-    extract_department
+    extract_department,
 )
 
 

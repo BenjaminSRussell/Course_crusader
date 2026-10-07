@@ -8,10 +8,10 @@ from .prerequisites import PrerequisiteParser
 from .pdf_parser import PDFCatalogParser, PDFCourseScraper
 
 __all__ = [
-    'PrerequisiteParser',
-    'clean_text',
-    'normalize_whitespace',
-    'extract_credits',
-    'PDFCatalogParser',
-    'PDFCourseScraper',
+    "PrerequisiteParser",
+    "clean_text",
+    "normalize_whitespace",
+    "extract_credits",
+    "PDFCatalogParser",
+    "PDFCourseScraper",
 ]

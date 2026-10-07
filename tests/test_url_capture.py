@@ -21,7 +21,7 @@ class TestURLCapture:
             credits=3,
             level="Undergraduate",
             department="CS",
-            catalog_url="https://example.com/courses/cs-101"
+            catalog_url="https://example.com/courses/cs-101",
         )
 
         assert course.catalog_url == "https://example.com/courses/cs-101"
@@ -36,12 +36,12 @@ class TestURLCapture:
             credits=3,
             level="Undergraduate",
             department="CS",
-            catalog_url="https://example.com/courses/cs-101"
+            catalog_url="https://example.com/courses/cs-101",
         )
 
         course_dict = course.to_dict()
-        assert 'catalog_url' in course_dict
-        assert course_dict['catalog_url'] == "https://example.com/courses/cs-101"
+        assert "catalog_url" in course_dict
+        assert course_dict["catalog_url"] == "https://example.com/courses/cs-101"
 
     def test_course_url_optional(self):
         """Test that catalog_url is optional (for backward compatibility)."""
@@ -52,7 +52,7 @@ class TestURLCapture:
             description="Test",
             credits=3,
             level="Undergraduate",
-            department="CS"
+            department="CS",
         )
 
         assert course.catalog_url is None
@@ -75,7 +75,7 @@ class TestURLCapture:
                 credits=3,
                 level="Undergraduate",
                 department="CS",
-                catalog_url="https://catalog.testu.edu/cs-101"
+                catalog_url="https://catalog.testu.edu/cs-101",
             )
 
             db.insert_course(course)
@@ -83,7 +83,7 @@ class TestURLCapture:
             # Retrieve and verify
             retrieved = db.get_course("TestU", "CS 101")
             assert retrieved is not None
-            assert retrieved['catalog_url'] == "https://catalog.testu.edu/cs-101"
+            assert retrieved["catalog_url"] == "https://catalog.testu.edu/cs-101"
 
             db.close()
 
@@ -98,7 +98,7 @@ class TestScraperURLCapture:
         class TestScraper(BaseCourseScraper):
             name = "test"
             university = "Test University"
-            start_urls = ['http://example.com']
+            start_urls = ["http://example.com"]
 
             def parse(self, response):
                 pass
@@ -113,7 +113,7 @@ class TestScraperURLCapture:
             credits=3,
             level="Undergraduate",
             department="CS",
-            catalog_url="https://example.com/course/cs-101"
+            catalog_url="https://example.com/course/cs-101",
         )
 
         assert course.catalog_url == "https://example.com/course/cs-101"
@@ -133,19 +133,19 @@ def test_url_capture_in_jsonl_export():
         credits=3,
         level="Undergraduate",
         department="CS",
-        catalog_url="https://catalog.testu.edu/cs-101"
+        catalog_url="https://catalog.testu.edu/cs-101",
     )
 
     with tempfile.TemporaryDirectory() as tmpdir:
         jsonl_path = Path(tmpdir) / "test.jsonl"
 
         # Write course to JSONL
-        with open(jsonl_path, 'w') as f:
-            f.write(json.dumps(course.to_dict()) + '\n')
+        with open(jsonl_path, "w") as f:
+            f.write(json.dumps(course.to_dict()) + "\n")
 
         # Read back and verify
-        with open(jsonl_path, 'r') as f:
+        with open(jsonl_path, "r") as f:
             loaded = json.loads(f.readline())
 
-        assert 'catalog_url' in loaded
-        assert loaded['catalog_url'] == "https://catalog.testu.edu/cs-101"
+        assert "catalog_url" in loaded
+        assert loaded["catalog_url"] == "https://catalog.testu.edu/cs-101"

@@ -17,6 +17,7 @@ class ValidationMetrics:
     """
     Accuracy metrics for a field or entire dataset.
     """
+
     total: int = 0
     correct: int = 0
     incorrect: int = 0
@@ -39,12 +40,12 @@ class ValidationMetrics:
     def to_dict(self) -> Dict:
         """Convert to dictionary."""
         return {
-            'total': self.total,
-            'correct': self.correct,
-            'incorrect': self.incorrect,
-            'missing': self.missing,
-            'accuracy': round(self.accuracy, 2),
-            'completeness': round(self.completeness, 2)
+            "total": self.total,
+            "correct": self.correct,
+            "incorrect": self.incorrect,
+            "missing": self.missing,
+            "accuracy": round(self.accuracy, 2),
+            "completeness": round(self.completeness, 2),
         }
 
 
@@ -53,6 +54,7 @@ class ValidationReport:
     """
     Complete validation report for scraped data vs golden dataset.
     """
+
     university: str
     total_courses: int
     field_metrics: Dict[str, ValidationMetrics] = field(default_factory=dict)
@@ -63,21 +65,18 @@ class ValidationReport:
         self.field_metrics[field_name] = metrics
 
     def add_error(
-        self,
-        course_id: str,
-        field: str,
-        expected: Any,
-        actual: Any,
-        error_type: str = "mismatch"
+        self, course_id: str, field: str, expected: Any, actual: Any, error_type: str = "mismatch"
     ):
         """Record a validation error."""
-        self.errors.append({
-            'course_id': course_id,
-            'field': field,
-            'expected': expected,
-            'actual': actual,
-            'error_type': error_type
-        })
+        self.errors.append(
+            {
+                "course_id": course_id,
+                "field": field,
+                "expected": expected,
+                "actual": actual,
+                "error_type": error_type,
+            }
+        )
 
     def overall_accuracy(self) -> float:
         """Calculate overall accuracy across all fields."""
@@ -95,14 +94,12 @@ class ValidationReport:
     def to_dict(self) -> Dict:
         """Convert to dictionary."""
         return {
-            'university': self.university,
-            'total_courses': self.total_courses,
-            'overall_accuracy': round(self.overall_accuracy(), 2),
-            'field_metrics': {
-                k: v.to_dict() for k, v in self.field_metrics.items()
-            },
-            'error_count': len(self.errors),
-            'errors': self.errors[:10]  # Include first 10 errors
+            "university": self.university,
+            "total_courses": self.total_courses,
+            "overall_accuracy": round(self.overall_accuracy(), 2),
+            "field_metrics": {k: v.to_dict() for k, v in self.field_metrics.items()},
+            "error_count": len(self.errors),
+            "errors": self.errors[:10],  # Include first 10 errors
         }
 
 
@@ -113,13 +110,13 @@ class GoldenDatasetValidator:
 
     # Fields to validate (in priority order)
     VALIDATED_FIELDS = [
-        'course_id',
-        'title',
-        'credits',
-        'department',
-        'level',
-        'description',
-        'prerequisites_text'
+        "course_id",
+        "title",
+        "credits",
+        "department",
+        "level",
+        "description",
+        "prerequisites_text",
     ]
 
     def __init__(self, golden_dataset_path: str):
@@ -138,8 +135,8 @@ class GoldenDatasetValidator:
         if not self.golden_dataset_path.exists():
             raise FileNotFoundError(f"Golden dataset not found: {self.golden_dataset_path}")
 
-        with open(self.golden_dataset_path, 'r', encoding='utf-8') as f:
-            if self.golden_dataset_path.suffix == '.jsonl':
+        with open(self.golden_dataset_path, "r", encoding="utf-8") as f:
+            if self.golden_dataset_path.suffix == ".jsonl":
                 for line in f:
                     if line.strip():
                         course = json.loads(line)
@@ -152,11 +149,7 @@ class GoldenDatasetValidator:
                     key = f"{course['university']}:{course['course_id']}"
                     self.golden_data[key] = course
 
-    def validate_course(
-        self,
-        course: Dict,
-        golden: Dict
-    ) -> Dict[str, bool]:
+    def validate_course(self, course: Dict, golden: Dict) -> Dict[str, bool]:
         """
         Validate a single course against golden data.
 
@@ -191,9 +184,7 @@ class GoldenDatasetValidator:
         return results
 
     def validate_dataset(
-        self,
-        scraped_data_path: str,
-        university: Optional[str] = None
+        self, scraped_data_path: str, university: Optional[str] = None
     ) -> ValidationReport:
         """
         Validate entire scraped dataset against golden data.
@@ -206,8 +197,8 @@ class GoldenDatasetValidator:
             ValidationReport with accuracy metrics
         """
         scraped_courses = []
-        with open(scraped_data_path, 'r', encoding='utf-8') as f:
-            if Path(scraped_data_path).suffix == '.jsonl':
+        with open(scraped_data_path, "r", encoding="utf-8") as f:
+            if Path(scraped_data_path).suffix == ".jsonl":
                 for line in f:
                     if line.strip():
                         scraped_courses.append(json.loads(line))
@@ -215,13 +206,11 @@ class GoldenDatasetValidator:
                 data = json.load(f)
                 scraped_courses = data if isinstance(data, list) else [data]
 
-
         if university:
-            scraped_courses = [c for c in scraped_courses if c['university'] == university]
+            scraped_courses = [c for c in scraped_courses if c["university"] == university]
 
         report = ValidationReport(
-            university=university or "All",
-            total_courses=len(scraped_courses)
+            university=university or "All", total_courses=len(scraped_courses)
         )
 
         field_metrics = {field: ValidationMetrics() for field in self.VALIDATED_FIELDS}
@@ -247,12 +236,11 @@ class GoldenDatasetValidator:
                 else:
                     metrics.incorrect += 1
                     report.add_error(
-                        course_id=course['course_id'],
+                        course_id=course["course_id"],
                         field=field,
                         expected=golden.get(field),
-                        actual=course.get(field)
+                        actual=course.get(field),
                     )
-
 
         for field, metrics in field_metrics.items():
             if metrics.total > 0:  # Only include fields that were validated
@@ -261,9 +249,7 @@ class GoldenDatasetValidator:
         return report
 
     def generate_report(
-        self,
-        scraped_data_path: str,
-        output_path: Optional[str] = None
+        self, scraped_data_path: str, output_path: Optional[str] = None
     ) -> ValidationReport:
         """
         Generate validation report and optionally save to file.
@@ -278,7 +264,7 @@ class GoldenDatasetValidator:
         report = self.validate_dataset(scraped_data_path)
 
         if output_path:
-            with open(output_path, 'w') as f:
+            with open(output_path, "w") as f:
                 json.dump(report.to_dict(), f, indent=2)
 
         return report
@@ -301,7 +287,9 @@ class GoldenDatasetValidator:
         print("-" * 60)
 
         for field, metrics in report.field_metrics.items():
-            print(f"{field:<20} {metrics.accuracy:>6.2f}%     {metrics.completeness:>6.2f}%        {metrics.incorrect}")
+            print(
+                f"{field:<20} {metrics.accuracy:>6.2f}%     {metrics.completeness:>6.2f}%        {metrics.incorrect}"
+            )
 
         if report.errors:
             print(f"\n\nTop Errors (showing {min(10, len(report.errors))}):")
@@ -314,10 +302,7 @@ class GoldenDatasetValidator:
 
 
 def create_golden_sample(
-    input_path: str,
-    output_path: str,
-    sample_size: int = 50,
-    university: Optional[str] = None
+    input_path: str, output_path: str, sample_size: int = 50, university: Optional[str] = None
 ):
     """
     Create a golden dataset sample from scraped data for manual verification.
@@ -331,8 +316,8 @@ def create_golden_sample(
     import random
 
     courses = []
-    with open(input_path, 'r', encoding='utf-8') as f:
-        if Path(input_path).suffix == '.jsonl':
+    with open(input_path, "r", encoding="utf-8") as f:
+        if Path(input_path).suffix == ".jsonl":
             for line in f:
                 if line.strip():
                     courses.append(json.loads(line))
@@ -341,12 +326,12 @@ def create_golden_sample(
             courses = data if isinstance(data, list) else [data]
 
     if university:
-        courses = [c for c in courses if c['university'] == university]
+        courses = [c for c in courses if c["university"] == university]
 
     if len(courses) > sample_size:
         courses = random.sample(courses, sample_size)
 
-    with open(output_path, 'w', encoding='utf-8') as f:
+    with open(output_path, "w", encoding="utf-8") as f:
         json.dump(courses, f, indent=2, ensure_ascii=False)
 
     print(f"Created golden dataset sample: {len(courses)} courses")

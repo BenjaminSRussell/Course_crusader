@@ -18,6 +18,7 @@ class PerformanceMetrics:
     """
     Performance metrics for a scraping run.
     """
+
     university: str
     start_time: float
     end_time: Optional[float] = None
@@ -44,13 +45,13 @@ class PerformanceMetrics:
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary."""
         return {
-            'university': self.university,
-            'duration_seconds': round(self.duration_seconds, 2),
-            'courses_scraped': self.courses_scraped,
-            'pages_fetched': self.pages_fetched,
-            'errors': self.errors,
-            'memory_peak_mb': round(self.memory_peak_mb, 2),
-            'courses_per_second': round(self.courses_per_second, 2)
+            "university": self.university,
+            "duration_seconds": round(self.duration_seconds, 2),
+            "courses_scraped": self.courses_scraped,
+            "pages_fetched": self.pages_fetched,
+            "errors": self.errors,
+            "memory_peak_mb": round(self.memory_peak_mb, 2),
+            "courses_per_second": round(self.courses_per_second, 2),
         }
 
 
@@ -74,20 +75,11 @@ class PerformanceMonitor:
         Returns:
             PerformanceMetrics object
         """
-        metrics = PerformanceMetrics(
-            university=university,
-            start_time=time.time()
-        )
+        metrics = PerformanceMetrics(university=university, start_time=time.time())
         self.metrics[university] = metrics
         return metrics
 
-    def update_metrics(
-        self,
-        university: str,
-        courses: int = 0,
-        pages: int = 0,
-        errors: int = 0
-    ):
+    def update_metrics(self, university: str, courses: int = 0, pages: int = 0, errors: int = 0):
         """
         Update metrics during scraping.
 
@@ -139,9 +131,9 @@ class PerformanceMonitor:
         else:
             metrics = list(self.metrics.values())
 
-        print("\n" + "="*70)
+        print("\n" + "=" * 70)
         print("Performance Summary")
-        print("="*70)
+        print("=" * 70)
 
         for m in metrics:
             print(f"\n{m.university}:")
@@ -153,7 +145,7 @@ class PerformanceMonitor:
             if m.errors > 0:
                 print(f"  Errors: {m.errors}")
 
-        print("="*70 + "\n")
+        print("=" * 70 + "\n")
 
 
 @contextmanager
@@ -246,8 +238,8 @@ class Benchmark:
         max_duration = max(durations)
 
         return {
-            'iterations': iterations,
-            'avg_duration_ms': round(avg_duration * 1000, 3),
-            'min_duration_ms': round(min_duration * 1000, 3),
-            'max_duration_ms': round(max_duration * 1000, 3)
+            "iterations": iterations,
+            "avg_duration_ms": round(avg_duration * 1000, 3),
+            "min_duration_ms": round(min_duration * 1000, 3),
+            "max_duration_ms": round(max_duration * 1000, 3),
         }

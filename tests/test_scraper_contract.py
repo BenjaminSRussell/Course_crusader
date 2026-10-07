@@ -1,4 +1,5 @@
 """Scraper contract: create_course required fields + infer_level (#14)."""
+
 import pytest
 
 from coursecrusader.models import Course

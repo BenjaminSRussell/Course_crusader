@@ -1,4 +1,5 @@
 """Tests for corequisite and offerings query helpers."""
+
 import tempfile
 from pathlib import Path
 

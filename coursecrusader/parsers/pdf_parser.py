@@ -70,7 +70,7 @@ class PDFCatalogParser:
         Returns:
             Extracted text content
         """
-        with open(file_path, 'rb') as f:
+        with open(file_path, "rb") as f:
             pdf_bytes = f.read()
 
         return self.parse_pdf_bytes(pdf_bytes)
@@ -110,7 +110,7 @@ class PDFCatalogParser:
                 if text:
                     text_parts.append(text)
 
-        full_text = '\n\n'.join(text_parts)
+        full_text = "\n\n".join(text_parts)
         return self._clean_pdf_text(full_text)
 
     def _is_multi_column_page(self, page) -> bool:
@@ -125,14 +125,14 @@ class PDFCatalogParser:
                 return False
 
             # Get x-coordinates of words
-            x_coords = [w['x0'] for w in words]
+            x_coords = [w["x0"] for w in words]
 
             # Simple heuristic: if words cluster around 2+ distinct x-positions,
             # likely multi-column
             x_coords.sort()
             gaps = []
             for i in range(1, len(x_coords)):
-                gap = x_coords[i] - x_coords[i-1]
+                gap = x_coords[i] - x_coords[i - 1]
                 if gap > 50:  # Significant gap suggests column boundary
                     gaps.append(gap)
 
@@ -180,7 +180,7 @@ class PDFCatalogParser:
             if text:
                 text_parts.append(text)
 
-        full_text = '\n\n'.join(text_parts)
+        full_text = "\n\n".join(text_parts)
         return self._clean_pdf_text(full_text)
 
     def _clean_pdf_text(self, text: str) -> str:
@@ -195,11 +195,7 @@ class PDFCatalogParser:
 
         return text
 
-    def split_into_courses(
-        self,
-        text: str,
-        course_pattern: Optional[str] = None
-    ) -> List[str]:
+    def split_into_courses(self, text: str, course_pattern: Optional[str] = None) -> List[str]:
         """
         Split PDF text into individual course entries.
 
@@ -214,7 +210,7 @@ class PDFCatalogParser:
         if course_pattern is None:
             # Default pattern: Department code followed by number and period
             # Example: "CSE 2100. Data Structures"
-            course_pattern = r'\n([A-Z]{2,6})\s+(\d{3,4}[A-Z]?)\.\s+'
+            course_pattern = r"\n([A-Z]{2,6})\s+(\d{3,4}[A-Z]?)\.\s+"
 
         matches = list(re.finditer(course_pattern, text))
 
@@ -237,10 +233,7 @@ class PDFCatalogParser:
 
         return courses
 
-    def extract_course_from_text(
-        self,
-        course_text: str
-    ) -> Optional[Dict[str, str]]:
+    def extract_course_from_text(self, course_text: str) -> Optional[Dict[str, str]]:
         """
         Extract course fields from a single course text block.
 
@@ -255,17 +248,19 @@ class PDFCatalogParser:
         # Example: "CSE 2100. Data Structures. 3 credits. Introduction to..."
 
         # First line usually has course code and title
-        lines = course_text.strip().split('\n')
+        lines = course_text.strip().split("\n")
         if not lines:
             return None
 
         first_line = lines[0]
 
-        pattern = r'^([A-Z]{2,6})\s+(\d{3,4}[A-Z]?)\.\s+(.+?)(?:\.\s+(\d+(?:\.\d+)?)\s+credits?)?\.?\s*$'
+        pattern = (
+            r"^([A-Z]{2,6})\s+(\d{3,4}[A-Z]?)\.\s+(.+?)(?:\.\s+(\d+(?:\.\d+)?)\s+credits?)?\.?\s*$"
+        )
         match = re.match(pattern, first_line)
 
         if not match:
-            pattern2 = r'^([A-Z]{2,6})\s+(\d{3,4}[A-Z]?)\.\s+(.+)'
+            pattern2 = r"^([A-Z]{2,6})\s+(\d{3,4}[A-Z]?)\.\s+(.+)"
             match = re.match(pattern2, first_line)
 
         if not match:
@@ -273,7 +268,7 @@ class PDFCatalogParser:
 
         dept = match.group(1)
         number = match.group(2)
-        title = match.group(3).strip().rstrip('.')
+        title = match.group(3).strip().rstrip(".")
 
         course_id = f"{dept} {number}"
 
@@ -285,26 +280,25 @@ class PDFCatalogParser:
         description_parts = lines[1:] if len(lines) > 1 else []
 
         # If credits not found, look in description
-        full_desc = ' '.join(description_parts)
+        full_desc = " ".join(description_parts)
 
         from .text_utils import extract_credits
+
         if credits is None:
             credits = extract_credits(full_desc)
 
         prereq_match = re.search(
-            r'(?:prerequisite|prereq)[s]?\s*:\s*([^.]+)',
-            full_desc,
-            re.IGNORECASE
+            r"(?:prerequisite|prereq)[s]?\s*:\s*([^.]+)", full_desc, re.IGNORECASE
         )
         if prereq_match:
             prereq_text = prereq_match.group(1).strip()
 
         return {
-            'course_id': course_id,
-            'title': title,
-            'description': full_desc.strip(),
-            'credits': credits,
-            'prerequisites_text': prereq_text,
+            "course_id": course_id,
+            "title": title,
+            "description": full_desc.strip(),
+            "credits": credits,
+            "prerequisites_text": prereq_text,
         }
 
 
@@ -327,11 +321,7 @@ class PDFCourseScraper:
         self.department = department
         self.parser = PDFCatalogParser()
 
-    def scrape_pdf(
-        self,
-        pdf_url: str,
-        course_pattern: Optional[str] = None
-    ) -> Iterator[Dict]:
+    def scrape_pdf(self, pdf_url: str, course_pattern: Optional[str] = None) -> Iterator[Dict]:
         """
         Scrape courses from a PDF URL.
 
@@ -350,11 +340,11 @@ class PDFCourseScraper:
             course_data = self.parser.extract_course_from_text(course_text)
 
             if course_data:
-                course_data['university'] = self.university
-                course_data['department'] = self.department
-                course_data['catalog_url'] = pdf_url
+                course_data["university"] = self.university
+                course_data["department"] = self.department
+                course_data["catalog_url"] = pdf_url
 
-                if 'level' not in course_data:
-                    course_data['level'] = Course.infer_level(course_data['course_id'])
+                if "level" not in course_data:
+                    course_data["level"] = Course.infer_level(course_data["course_id"])
 
                 yield course_data

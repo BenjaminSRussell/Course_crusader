@@ -1,4 +1,5 @@
 """Tests for search pagination and insert upsert accounting."""
+
 import tempfile
 from pathlib import Path
 
@@ -51,10 +52,12 @@ def test_insert_distinguishes_added_vs_updated():
         assert r2["added"] == 0 and r2["updated"] == 1
         assert r2["row_id"] == row_id
         assert db.get_course("TestU", "CS 101")["title"] == "Intro Updated"
-        bulk = db.insert_courses_bulk([
-            _course("CS102"),
-            _course("CS101", title="Again"),
-        ])
+        bulk = db.insert_courses_bulk(
+            [
+                _course("CS102"),
+                _course("CS101", title="Again"),
+            ]
+        )
         assert bulk["added"] == 1
         assert bulk["updated"] == 1
         db.close()

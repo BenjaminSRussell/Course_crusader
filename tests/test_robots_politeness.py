@@ -1,4 +1,5 @@
 """Robots politeness settings (#12)."""
+
 from unittest.mock import MagicMock
 
 from scrapy.exceptions import IgnoreRequest

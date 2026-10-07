@@ -25,16 +25,14 @@ class YaleScraper(BaseCourseScraper):
     name = "yale"
     university = "Yale University"
 
-    start_urls = [
-        'https://catalog.yale.edu/courses/'
-    ]
+    start_urls = ["https://catalog.yale.edu/courses/"]
 
     custom_settings = {
-        'FEEDS': {
-            'yale_courses.jsonl': {
-                'format': 'jsonlines',
-                'encoding': 'utf-8',
-                'overwrite': True,
+        "FEEDS": {
+            "yale_courses.jsonl": {
+                "format": "jsonlines",
+                "encoding": "utf-8",
+                "overwrite": True,
             },
         },
     }
@@ -46,10 +44,7 @@ class YaleScraper(BaseCourseScraper):
         # Find department/subject links
         dept_links = response.css('a[href*="/courses/"]::attr(href)').getall()
 
-        dept_links = [
-            link for link in dept_links
-            if re.search(r'/courses/[a-z]+/$', link.lower())
-        ]
+        dept_links = [link for link in dept_links if re.search(r"/courses/[a-z]+/$", link.lower())]
 
         self.logger.info(f"Found {len(dept_links)} departments")
 
@@ -62,7 +57,7 @@ class YaleScraper(BaseCourseScraper):
 
         dept_name = self._extract_department_name(response)
 
-        course_blocks = response.css('div.course-block')
+        course_blocks = response.css("div.course-block")
 
         if not course_blocks:
             course_blocks = response.css('div.courseblock, div[class*="course"]')
@@ -75,17 +70,17 @@ class YaleScraper(BaseCourseScraper):
                 if course:
                     self.log_parse_success(course)
                     yield course
-                    self.stats['courses_scraped'] += 1
+                    self.stats["courses_scraped"] += 1
             except Exception as e:
                 self.log_parse_failure(response.url, str(e))
 
     def _extract_department_name(self, response) -> str:
         """Extract department name."""
-        title = response.css('h1::text, h2::text').get()
+        title = response.css("h1::text, h2::text").get()
         if title:
             return title.strip()
 
-        match = re.search(r'/courses/([^/]+)/', response.url)
+        match = re.search(r"/courses/([^/]+)/", response.url)
         if match:
             return match.group(1).upper()
 
@@ -98,16 +93,16 @@ class YaleScraper(BaseCourseScraper):
         Yale format typically: "CPSC 201. Introduction to Computer Science"
         """
         # Extract title line with course code
-        title_elem = block.css('h3::text, .course-title::text').get()
+        title_elem = block.css("h3::text, .course-title::text").get()
 
         if not title_elem:
-            title_elem = block.css('::text').get()
+            title_elem = block.css("::text").get()
 
         if not title_elem:
             return None
 
         # Parse format: "DEPT NNN. Title"
-        pattern = r'^([A-Z]{2,6})\s+(\d{3,4}[A-Z]?)\.\s+(.+?)(?:\s*\.\s*)?$'
+        pattern = r"^([A-Z]{2,6})\s+(\d{3,4}[A-Z]?)\.\s+(.+?)(?:\s*\.\s*)?$"
         match = re.match(pattern, title_elem.strip())
 
         if not match:
@@ -119,14 +114,14 @@ class YaleScraper(BaseCourseScraper):
 
         course_id = f"{dept_code} {number}"
 
-        desc_elem = block.css('p.description::text, div.description::text').get()
+        desc_elem = block.css("p.description::text, div.description::text").get()
         if not desc_elem:
-            desc_parts = block.css('p::text').getall()
-            desc_elem = ' '.join(desc_parts)
+            desc_parts = block.css("p::text").getall()
+            desc_elem = " ".join(desc_parts)
 
         description = clean_text(desc_elem) if desc_elem else ""
 
-        credits = extract_credits(block.css('::text').getall().__str__())
+        credits = extract_credits(block.css("::text").getall().__str__())
 
         prereq_data = self._extract_prerequisites(block, description)
 
@@ -140,23 +135,21 @@ class YaleScraper(BaseCourseScraper):
             level=level,
             department=dept_name,
             catalog_url=page_url,
-            **prereq_data
+            **prereq_data,
         )
 
         return course
 
     def _extract_prerequisites(self, block, description: str) -> dict:
         """Extract prerequisites."""
-        prereq_elem = block.css('.prerequisites::text, .prereq::text').get()
+        prereq_elem = block.css(".prerequisites::text, .prereq::text").get()
 
         if prereq_elem:
             prereq_text = clean_text(prereq_elem)
             return self.parse_prerequisites(prereq_text)
 
         prereq_match = re.search(
-            r'(?:prerequisite|prereq)[s]?\s*:\s*([^.]+)',
-            description,
-            re.IGNORECASE
+            r"(?:prerequisite|prereq)[s]?\s*:\s*([^.]+)", description, re.IGNORECASE
         )
 
         if prereq_match:
@@ -164,7 +157,7 @@ class YaleScraper(BaseCourseScraper):
             return self.parse_prerequisites(prereq_text)
 
         return {
-            'prerequisites': None,
-            'prerequisites_text': None,
-            'prerequisites_parsed': True,
+            "prerequisites": None,
+            "prerequisites_text": None,
+            "prerequisites_parsed": True,
         }

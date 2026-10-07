@@ -108,7 +108,8 @@ class CourseDatabase:
         offerings_json = json.dumps(course.offerings) if course.offerings else None
 
         existing = self.get_course(course.university, course.course_id)
-        cursor.execute("""
+        cursor.execute(
+            """
             INSERT INTO courses (
                 university, course_id, title, description, credits, level,
                 department, prerequisites_text, prerequisites_json,
@@ -130,24 +131,26 @@ class CourseDatabase:
                 catalog_url=excluded.catalog_url,
                 last_updated=excluded.last_updated,
                 notes=excluded.notes
-        """, (
-            course.university,
-            course.course_id,
-            course.title,
-            course.description,
-            str(course.credits),
-            course.level,
-            course.department,
-            course.prerequisites_text,
-            prerequisites_json,
-            course.prerequisites_parsed,
-            corequisites_json,
-            course.restrictions,
-            offerings_json,
-            course.catalog_url,
-            course.last_updated,
-            course.notes
-        ))
+        """,
+            (
+                course.university,
+                course.course_id,
+                course.title,
+                course.description,
+                str(course.credits),
+                course.level,
+                course.department,
+                course.prerequisites_text,
+                prerequisites_json,
+                course.prerequisites_parsed,
+                corequisites_json,
+                course.restrictions,
+                offerings_json,
+                course.catalog_url,
+                course.last_updated,
+                course.notes,
+            ),
+        )
 
         self.conn.commit()
         row = self.get_course(course.university, course.course_id)
@@ -187,10 +190,13 @@ class CourseDatabase:
             Course as dictionary or None if not found
         """
         cursor = self.conn.cursor()
-        cursor.execute("""
+        cursor.execute(
+            """
             SELECT * FROM courses
             WHERE university = ? AND course_id = ?
-        """, (university, course_id))
+        """,
+            (university, course_id),
+        )
 
         row = cursor.fetchone()
         return dict(row) if row else None
@@ -206,19 +212,18 @@ class CourseDatabase:
             List of course dictionaries
         """
         cursor = self.conn.cursor()
-        cursor.execute("""
+        cursor.execute(
+            """
             SELECT * FROM courses
             WHERE university = ?
             ORDER BY course_id
-        """, (university,))
+        """,
+            (university,),
+        )
 
         return [dict(row) for row in cursor.fetchall()]
 
-    def get_courses_by_department(
-        self,
-        university: str,
-        department: str
-    ) -> List[Dict]:
+    def get_courses_by_department(self, university: str, department: str) -> List[Dict]:
         """
         Get courses by department.
 
@@ -230,11 +235,14 @@ class CourseDatabase:
             List of course dictionaries
         """
         cursor = self.conn.cursor()
-        cursor.execute("""
+        cursor.execute(
+            """
             SELECT * FROM courses
             WHERE university = ? AND department = ?
             ORDER BY course_id
-        """, (university, department))
+        """,
+            (university, department),
+        )
 
         return [dict(row) for row in cursor.fetchall()]
 
@@ -299,7 +307,6 @@ class CourseDatabase:
             "truncated": total > offset + len(rows),
         }
 
-
     VALID_OFFERINGS = ("Fall", "Spring", "Summer", "Winter", "Year-round")
 
     def courses_with_corequisite(
@@ -329,14 +336,12 @@ class CourseDatabase:
                 (university,),
             )
         else:
-            cursor.execute(
-                """
+            cursor.execute("""
                 SELECT * FROM courses
                 WHERE corequisites_json IS NOT NULL
                   AND TRIM(corequisites_json) != ''
                 ORDER BY university, course_id
-                """
-            )
+                """)
 
         rows = []
         skipped_invalid = 0
@@ -363,19 +368,15 @@ class CourseDatabase:
         """
         term_norm = (term or "").strip()
         if term_norm not in self.VALID_OFFERINGS:
-            raise ValueError(
-                f"Invalid term {term!r}; expected one of {list(self.VALID_OFFERINGS)}"
-            )
+            raise ValueError(f"Invalid term {term!r}; expected one of {list(self.VALID_OFFERINGS)}")
 
         cursor = self.conn.cursor()
-        cursor.execute(
-            """
+        cursor.execute("""
             SELECT * FROM courses
             WHERE offerings_json IS NOT NULL
               AND TRIM(offerings_json) != ''
             ORDER BY university, course_id
-            """
-        )
+            """)
 
         rows = []
         skipped_invalid = 0
@@ -432,10 +433,10 @@ class CourseDatabase:
         prereq_parse_rate = (prereq_row[0] / prereq_row[1] * 100) if prereq_row[1] > 0 else 0
 
         return {
-            'total_courses': total_courses,
-            'by_university': by_university,
-            'by_level': by_level,
-            'prerequisite_parse_rate': round(prereq_parse_rate, 2)
+            "total_courses": total_courses,
+            "by_university": by_university,
+            "by_level": by_level,
+            "prerequisite_parse_rate": round(prereq_parse_rate, 2),
         }
 
     def record_scrape(
@@ -445,7 +446,7 @@ class CourseDatabase:
         courses_updated: int = 0,
         courses_removed: int = 0,
         scraper_version: str = "0.1.0",
-        notes: str = ""
+        notes: str = "",
     ):
         """
         Record metadata about a scraping run.
@@ -460,20 +461,23 @@ class CourseDatabase:
         """
         cursor = self.conn.cursor()
 
-        cursor.execute("""
+        cursor.execute(
+            """
             INSERT INTO scrape_metadata (
                 university, scrape_date, courses_added, courses_updated,
                 courses_removed, scraper_version, notes
             ) VALUES (?, ?, ?, ?, ?, ?, ?)
-        """, (
-            university,
-            datetime.utcnow().isoformat(),
-            courses_added,
-            courses_updated,
-            courses_removed,
-            scraper_version,
-            notes
-        ))
+        """,
+            (
+                university,
+                datetime.utcnow().isoformat(),
+                courses_added,
+                courses_updated,
+                courses_removed,
+                scraper_version,
+                notes,
+            ),
+        )
 
         self.conn.commit()
 
@@ -493,19 +497,19 @@ class CourseDatabase:
             courses = [dict(row) for row in cursor.fetchall()]
 
         for course in courses:
-            if course.get('prerequisites_json'):
-                course['prerequisites'] = json.loads(course['prerequisites_json'])
-            if course.get('corequisites_json'):
-                course['corequisites'] = json.loads(course['corequisites_json'])
-            if course.get('offerings_json'):
-                course['offerings'] = json.loads(course['offerings_json'])
+            if course.get("prerequisites_json"):
+                course["prerequisites"] = json.loads(course["prerequisites_json"])
+            if course.get("corequisites_json"):
+                course["corequisites"] = json.loads(course["corequisites_json"])
+            if course.get("offerings_json"):
+                course["offerings"] = json.loads(course["offerings_json"])
 
-            course.pop('prerequisites_json', None)
-            course.pop('corequisites_json', None)
-            course.pop('offerings_json', None)
-            course.pop('id', None)
+            course.pop("prerequisites_json", None)
+            course.pop("corequisites_json", None)
+            course.pop("offerings_json", None)
+            course.pop("id", None)
 
-        with open(output_path, 'w', encoding='utf-8') as f:
+        with open(output_path, "w", encoding="utf-8") as f:
             json.dump(courses, f, indent=2, ensure_ascii=False)
 
     def export_to_parquet(
@@ -545,24 +549,26 @@ class CourseDatabase:
 
         if not rows:
             # Write empty table with known columns
-            schema = pa.schema([
-                ("university", pa.string()),
-                ("course_id", pa.string()),
-                ("title", pa.string()),
-                ("description", pa.string()),
-                ("credits", pa.string()),
-                ("level", pa.string()),
-                ("department", pa.string()),
-                ("prerequisites_text", pa.string()),
-                ("prerequisites_json", pa.string()),
-                ("prerequisites_parsed", pa.bool_()),
-                ("corequisites_json", pa.string()),
-                ("restrictions", pa.string()),
-                ("offerings_json", pa.string()),
-                ("catalog_url", pa.string()),
-                ("last_updated", pa.string()),
-                ("notes", pa.string()),
-            ])
+            schema = pa.schema(
+                [
+                    ("university", pa.string()),
+                    ("course_id", pa.string()),
+                    ("title", pa.string()),
+                    ("description", pa.string()),
+                    ("credits", pa.string()),
+                    ("level", pa.string()),
+                    ("department", pa.string()),
+                    ("prerequisites_text", pa.string()),
+                    ("prerequisites_json", pa.string()),
+                    ("prerequisites_parsed", pa.bool_()),
+                    ("corequisites_json", pa.string()),
+                    ("restrictions", pa.string()),
+                    ("offerings_json", pa.string()),
+                    ("catalog_url", pa.string()),
+                    ("last_updated", pa.string()),
+                    ("notes", pa.string()),
+                ]
+            )
             table = pa.Table.from_pylist([], schema=schema)
         else:
             table = pa.Table.from_pylist(rows)
@@ -608,7 +614,7 @@ def import_jsonl_to_db(jsonl_path: str, db_path: str = "courses.db") -> int:
     db = CourseDatabase(db_path)
     count = 0
 
-    with open(jsonl_path, 'r', encoding='utf-8') as f:
+    with open(jsonl_path, "r", encoding="utf-8") as f:
         for line in f:
             if line.strip():
                 course_data = json.loads(line)

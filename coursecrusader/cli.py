@@ -30,39 +30,28 @@ def main():
 
 
 @main.command()
+@click.option("--school", "-s", required=True, help="University identifier (e.g., uconn, mit)")
 @click.option(
-    '--school',
-    '-s',
-    required=True,
-    help='University identifier (e.g., uconn, mit)'
+    "--output", "-o", type=click.Path(), help="Output file path (default: {school}_courses.jsonl)"
 )
 @click.option(
-    '--output',
-    '-o',
-    type=click.Path(),
-    help='Output file path (default: {school}_courses.jsonl)'
+    "--format",
+    "-f",
+    type=click.Choice(["jsonl", "json", "csv"], case_sensitive=False),
+    default="jsonl",
+    help="Output format (default: jsonl)",
 )
+@click.option("--limit", "-l", type=int, help="Limit number of courses to scrape (for testing)")
 @click.option(
-    '--format',
-    '-f',
-    type=click.Choice(['jsonl', 'json', 'csv'], case_sensitive=False),
-    default='jsonl',
-    help='Output format (default: jsonl)'
-)
-@click.option(
-    '--limit',
-    '-l',
-    type=int,
-    help='Limit number of courses to scrape (for testing)'
-)
-@click.option(
-    '--database',
-    '-d',
+    "--database",
+    "-d",
     type=click.Path(),
     default=None,
-    help='SQLite path for SqlitePipeline (default: COURSECRUSADER_DB_PATH or courses.db)'
+    help="SQLite path for SqlitePipeline (default: COURSECRUSADER_DB_PATH or courses.db)",
 )
-def scrape(school: str, output: Optional[str], format: str, limit: Optional[int], database: Optional[str]):
+def scrape(
+    school: str, output: Optional[str], format: str, limit: Optional[int], database: Optional[str]
+):
     """
     Scrape course catalog for a specific university.
 
@@ -92,23 +81,29 @@ def scrape(school: str, output: Optional[str], format: str, limit: Optional[int]
     settings = get_project_settings()
 
     import os
-    db_path = database or os.environ.get("COURSECRUSADER_DB_PATH") or settings.get(
-        "COURSECRUSADER_DB_PATH", "courses.db"
+
+    db_path = (
+        database
+        or os.environ.get("COURSECRUSADER_DB_PATH")
+        or settings.get("COURSECRUSADER_DB_PATH", "courses.db")
     )
     settings.set("COURSECRUSADER_DB_PATH", db_path)
     click.echo(f"🗄️  SQLite: {db_path}")
 
-    feed_format = 'jsonlines' if format == 'jsonl' else format
-    settings.set('FEEDS', {
-        output: {
-            'format': feed_format,
-            'encoding': 'utf-8',
-            'overwrite': True,
-        }
-    })
+    feed_format = "jsonlines" if format == "jsonl" else format
+    settings.set(
+        "FEEDS",
+        {
+            output: {
+                "format": feed_format,
+                "encoding": "utf-8",
+                "overwrite": True,
+            }
+        },
+    )
 
     if limit:
-        settings.set('CLOSESPIDER_ITEMCOUNT', limit)
+        settings.set("CLOSESPIDER_ITEMCOUNT", limit)
         click.echo(f"⚠️  Limited to {limit} courses (testing mode)")
 
     try:
@@ -160,15 +155,9 @@ def status(do_write: bool):
         click.echo(f"Wrote {path}")
 
 
-
 @main.command()
-@click.argument('file', type=click.Path(exists=True))
-@click.option(
-    '--limit',
-    '-l',
-    type=int,
-    help='Number of courses to display (default: all)'
-)
+@click.argument("file", type=click.Path(exists=True))
+@click.option("--limit", "-l", type=int, help="Number of courses to display (default: all)")
 def validate(file: str, limit: Optional[int]):
     """
     Validate a scraped course catalog file.
@@ -181,13 +170,13 @@ def validate(file: str, limit: Optional[int]):
         courses = []
         file_path = Path(file)
 
-        if file_path.suffix == '.jsonl':
-            with open(file_path, 'r', encoding='utf-8') as f:
+        if file_path.suffix == ".jsonl":
+            with open(file_path, "r", encoding="utf-8") as f:
                 for line in f:
                     if line.strip():
                         courses.append(json.loads(line))
-        elif file_path.suffix == '.json':
-            with open(file_path, 'r', encoding='utf-8') as f:
+        elif file_path.suffix == ".json":
+            with open(file_path, "r", encoding="utf-8") as f:
                 data = json.load(f)
                 courses = data if isinstance(data, list) else [data]
         else:
@@ -210,16 +199,15 @@ def validate(file: str, limit: Optional[int]):
                 if is_valid:
                     valid += 1
                 else:
-                    errors.append({
-                        'course': f"{course.university} {course.course_id}",
-                        'errors': course_errors
-                    })
+                    errors.append(
+                        {
+                            "course": f"{course.university} {course.course_id}",
+                            "errors": course_errors,
+                        }
+                    )
 
             except Exception as e:
-                errors.append({
-                    'course': f"Course #{i+1}",
-                    'errors': [str(e)]
-                })
+                errors.append({"course": f"Course #{i+1}", "errors": [str(e)]})
 
         click.echo(f"📊 Validation Results:")
         click.echo(f"  Total courses: {total}")
@@ -231,7 +219,7 @@ def validate(file: str, limit: Optional[int]):
             click.echo("⚠️  Validation Errors:\n")
             for error in errors[:10]:
                 click.echo(f"  {error['course']}:")
-                for err in error['errors']:
+                for err in error["errors"]:
                     click.echo(f"    - {err}")
                 click.echo()
 
@@ -244,13 +232,9 @@ def validate(file: str, limit: Optional[int]):
 
 
 @main.command()
-@click.argument('files', nargs=-1, type=click.Path(exists=True), required=True)
+@click.argument("files", nargs=-1, type=click.Path(exists=True), required=True)
 @click.option(
-    '--output',
-    '-o',
-    type=click.Path(),
-    required=True,
-    help='Output file for merged data'
+    "--output", "-o", type=click.Path(), required=True, help="Output file for merged data"
 )
 def merge(files: tuple, output: str):
     """
@@ -271,13 +255,13 @@ def merge(files: tuple, output: str):
         path = Path(file_path)
 
         try:
-            if path.suffix == '.jsonl':
-                with open(path, 'r', encoding='utf-8') as f:
+            if path.suffix == ".jsonl":
+                with open(path, "r", encoding="utf-8") as f:
                     for line in f:
                         if line.strip():
                             all_courses.append(json.loads(line))
-            elif path.suffix == '.json':
-                with open(path, 'r', encoding='utf-8') as f:
+            elif path.suffix == ".json":
+                with open(path, "r", encoding="utf-8") as f:
                     data = json.load(f)
                     if isinstance(data, list):
                         all_courses.extend(data)
@@ -291,12 +275,12 @@ def merge(files: tuple, output: str):
     output_path = Path(output)
 
     try:
-        if output_path.suffix == '.jsonl':
-            with open(output_path, 'w', encoding='utf-8') as f:
+        if output_path.suffix == ".jsonl":
+            with open(output_path, "w", encoding="utf-8") as f:
                 for course in all_courses:
-                    f.write(json.dumps(course) + '\n')
-        elif output_path.suffix == '.json':
-            with open(output_path, 'w', encoding='utf-8') as f:
+                    f.write(json.dumps(course) + "\n")
+        elif output_path.suffix == ".json":
+            with open(output_path, "w", encoding="utf-8") as f:
                 json.dump(all_courses, f, indent=2, ensure_ascii=False)
         else:
             click.echo(f"❌ Unsupported output format: {output_path.suffix}", err=True)
@@ -307,8 +291,6 @@ def merge(files: tuple, output: str):
     except Exception as e:
         click.echo(f"❌ Error writing output: {e}", err=True)
         sys.exit(1)
-
-
 
 
 @main.command("export")
@@ -342,7 +324,9 @@ def merge(files: tuple, output: str):
     is_flag=True,
     help="Write Hive-style university= partitions (parquet only)",
 )
-def export_cmd(database: str, fmt: str, output: str, university: Optional[str], partition_by_university: bool):
+def export_cmd(
+    database: str, fmt: str, output: str, university: Optional[str], partition_by_university: bool
+):
     """Export courses.db to Parquet (or JSON) for Data-visualizer handoff (#11)."""
     from .database import CourseDatabase
 
@@ -371,13 +355,13 @@ def schema():
 
 
 @main.command()
-@click.argument('file', type=click.Path(exists=True))
+@click.argument("file", type=click.Path(exists=True))
 @click.option(
-    '--database',
-    '-d',
+    "--database",
+    "-d",
     type=click.Path(),
-    default='courses.db',
-    help='SQLite database file (default: courses.db)'
+    default="courses.db",
+    help="SQLite database file (default: courses.db)",
 )
 def import_db(file: str, database: str):
     """
@@ -399,16 +383,16 @@ def import_db(file: str, database: str):
         file_path = Path(file)
         count = 0
 
-        if file_path.suffix == '.jsonl':
-            with open(file_path, 'r', encoding='utf-8') as f:
+        if file_path.suffix == ".jsonl":
+            with open(file_path, "r", encoding="utf-8") as f:
                 for line in f:
                     if line.strip():
                         course_data = json.loads(line)
                         course = Course(**course_data)
                         db.insert_course(course)
                         count += 1
-        elif file_path.suffix == '.json':
-            with open(file_path, 'r', encoding='utf-8') as f:
+        elif file_path.suffix == ".json":
+            with open(file_path, "r", encoding="utf-8") as f:
                 data = json.load(f)
                 courses_data = data if isinstance(data, list) else [data]
                 for course_data in courses_data:
@@ -426,17 +410,13 @@ def import_db(file: str, database: str):
 
 @main.command()
 @click.option(
-    '--database',
-    '-d',
+    "--database",
+    "-d",
     type=click.Path(exists=True),
-    default='courses.db',
-    help='SQLite database file'
+    default="courses.db",
+    help="SQLite database file",
 )
-@click.option(
-    '--university',
-    '-u',
-    help='Filter by university'
-)
+@click.option("--university", "-u", help="Filter by university")
 def db_stats(database: str, university: Optional[str]):
     """
     Display statistics about the course database.
@@ -461,10 +441,10 @@ def db_stats(database: str, university: Optional[str]):
             click.echo("\n📊 Database Statistics:\n")
             click.echo(f"  Total courses: {stats['total_courses']}")
             click.echo(f"\n  By University:")
-            for uni, count in stats['by_university'].items():
+            for uni, count in stats["by_university"].items():
                 click.echo(f"    {uni}: {count}")
             click.echo(f"\n  By Level:")
-            for level, count in stats['by_level'].items():
+            for level, count in stats["by_level"].items():
                 click.echo(f"    {level}: {count}")
             click.echo(f"\n  Prerequisite Parse Rate: {stats['prerequisite_parse_rate']}%")
 
@@ -476,26 +456,16 @@ def db_stats(database: str, university: Optional[str]):
 
 
 @main.command()
-@click.argument('query')
+@click.argument("query")
 @click.option(
-    '--database',
-    '-d',
+    "--database",
+    "-d",
     type=click.Path(exists=True),
-    default='courses.db',
-    help='SQLite database file'
+    default="courses.db",
+    help="SQLite database file",
 )
-@click.option(
-    '--university',
-    '-u',
-    help='Filter by university'
-)
-@click.option(
-    '--limit',
-    '-l',
-    type=int,
-    default=10,
-    help='Maximum results to show'
-)
+@click.option("--university", "-u", help="Filter by university")
+@click.option("--limit", "-l", type=int, default=10, help="Maximum results to show")
 def search(query: str, database: str, university: Optional[str], limit: int):
     """
     Search courses in the database by title or description.
@@ -521,8 +491,12 @@ def search(query: str, database: str, university: Optional[str], limit: int):
 
         for i, course in enumerate(results):
             click.echo(f"{i+1}. {course['university']} {course['course_id']}: {course['title']}")
-            if course.get('description'):
-                desc = course['description'][:100] + "..." if len(course['description']) > 100 else course['description']
+            if course.get("description"):
+                desc = (
+                    course["description"][:100] + "..."
+                    if len(course["description"]) > 100
+                    else course["description"]
+                )
                 click.echo(f"   {desc}\n")
 
         if result.get("truncated"):
@@ -534,16 +508,17 @@ def search(query: str, database: str, university: Optional[str], limit: int):
         click.echo(f"❌ Error: {e}", err=True)
         sys.exit(1)
 
-@main.command('corequisite')
-@click.argument('course_id')
+
+@main.command("corequisite")
+@click.argument("course_id")
 @click.option(
-    '--database',
-    '-d',
+    "--database",
+    "-d",
     type=click.Path(exists=True),
-    default='courses.db',
-    help='SQLite database file',
+    default="courses.db",
+    help="SQLite database file",
 )
-@click.option('--university', '-u', help='Filter by university')
+@click.option("--university", "-u", help="Filter by university")
 def corequisite(course_id: str, database: str, university: Optional[str]):
     """List courses that list COURSE_ID as a corequisite."""
     from .database import CourseDatabase
@@ -564,14 +539,14 @@ def corequisite(course_id: str, database: str, university: Optional[str]):
         db.close()
 
 
-@main.command('offered')
-@click.argument('term')
+@main.command("offered")
+@click.argument("term")
 @click.option(
-    '--database',
-    '-d',
+    "--database",
+    "-d",
     type=click.Path(exists=True),
-    default='courses.db',
-    help='SQLite database file',
+    default="courses.db",
+    help="SQLite database file",
 )
 def offered(term: str, database: str):
     """List courses offered in TERM (Fall/Spring/Summer/Winter/Year-round)."""
@@ -595,5 +570,6 @@ def offered(term: str, database: str):
     finally:
         db.close()
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     main()

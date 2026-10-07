@@ -20,6 +20,7 @@ class CatalogSnapshot:
 
     Used for change detection.
     """
+
     university: str
     url: str
     content_hash: str
@@ -33,7 +34,7 @@ class CatalogSnapshot:
         return asdict(self)
 
     @classmethod
-    def from_dict(cls, data: Dict) -> 'CatalogSnapshot':
+    def from_dict(cls, data: Dict) -> "CatalogSnapshot":
         """Create from dictionary."""
         return cls(**data)
 
@@ -59,17 +60,14 @@ class ChangeDetector:
     def _load_snapshots(self):
         """Load snapshots from file."""
         if self.snapshot_file.exists():
-            with open(self.snapshot_file, 'r') as f:
+            with open(self.snapshot_file, "r") as f:
                 data = json.load(f)
-                self.snapshots = {
-                    k: CatalogSnapshot.from_dict(v)
-                    for k, v in data.items()
-                }
+                self.snapshots = {k: CatalogSnapshot.from_dict(v) for k, v in data.items()}
 
     def _save_snapshots(self):
         """Save snapshots to file."""
         data = {k: v.to_dict() for k, v in self.snapshots.items()}
-        with open(self.snapshot_file, 'w') as f:
+        with open(self.snapshot_file, "w") as f:
             json.dump(data, f, indent=2)
 
     def _compute_content_hash(self, url: str) -> Optional[str]:
@@ -93,12 +91,7 @@ class ChangeDetector:
             print(f"Error fetching {url}: {e}")
             return None
 
-    def check_for_changes(
-        self,
-        university: str,
-        url: str,
-        force: bool = False
-    ) -> tuple[bool, str]:
+    def check_for_changes(self, university: str, url: str, force: bool = False) -> tuple[bool, str]:
         """
         Check if a catalog has changed since last snapshot.
 
@@ -122,7 +115,7 @@ class ChangeDetector:
                 last_checked=datetime.utcnow().isoformat(),
                 last_updated=datetime.utcnow().isoformat(),
                 course_count=0,
-                notes="Initial snapshot"
+                notes="Initial snapshot",
             )
             self.snapshots[university] = snapshot
             self._save_snapshots()
@@ -146,12 +139,7 @@ class ChangeDetector:
         self._save_snapshots()
         return False, "No changes detected"
 
-    def update_snapshot(
-        self,
-        university: str,
-        course_count: int,
-        notes: str = ""
-    ):
+    def update_snapshot(self, university: str, course_count: int, notes: str = ""):
         """
         Update snapshot after successful scrape.
 
@@ -204,9 +192,7 @@ class RefreshScheduler:
     """
 
     def __init__(
-        self,
-        change_detector: Optional[ChangeDetector] = None,
-        check_interval_hours: int = 24
+        self, change_detector: Optional[ChangeDetector] = None, check_interval_hours: int = 24
     ):
         """
         Initialize refresh scheduler.
@@ -264,10 +250,7 @@ class RefreshScheduler:
 
         return priorities
 
-    def generate_refresh_plan(
-        self,
-        max_universities: int = 5
-    ) -> List[Dict]:
+    def generate_refresh_plan(self, max_universities: int = 5) -> List[Dict]:
         """
         Generate a refresh plan for top priority universities.
 
@@ -283,12 +266,14 @@ class RefreshScheduler:
         for university, priority in priorities:
             snapshot = self.detector.get_snapshot(university)
             if snapshot:
-                tasks.append({
-                    'university': university,
-                    'url': snapshot.url,
-                    'priority': priority,
-                    'last_updated': snapshot.last_updated,
-                    'course_count': snapshot.course_count
-                })
+                tasks.append(
+                    {
+                        "university": university,
+                        "url": snapshot.url,
+                        "priority": priority,
+                        "last_updated": snapshot.last_updated,
+                        "course_count": snapshot.course_count,
+                    }
+                )
 
         return tasks
