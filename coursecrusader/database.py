@@ -102,6 +102,18 @@ class CourseDatabase:
         """)
 
         cursor.execute("""
+            CREATE TABLE IF NOT EXISTS catalog_snapshots (
+                university TEXT NOT NULL,
+                url TEXT NOT NULL,
+                content_hash TEXT NOT NULL,
+                etag TEXT,
+                fetched_at TEXT NOT NULL,
+                course_count INTEGER DEFAULT 0,
+                PRIMARY KEY (university, url)
+            )
+        """)
+
+        cursor.execute("""
             CREATE TABLE IF NOT EXISTS scrape_metadata (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 university TEXT NOT NULL,
@@ -148,6 +160,87 @@ class CourseDatabase:
             (university, course_id, url, kind, datetime.utcnow().isoformat() + "Z"),
         )
         self.conn.commit()
+
+
+    def get_catalog_snapshot(self, university: str, url: str):
+        cursor = self.conn.cursor()
+        cursor.execute(
+            "SELECT * FROM catalog_snapshots WHERE university = ? AND url = ?",
+            (university, url),
+        )
+        row = cursor.fetchone()
+        return dict(row) if row else None
+
+    def upsert_catalog_snapshot(
+        self,
+        university: str,
+        url: str,
+        content_hash: str,
+        etag: str = None,
+        course_count: int = 0,
+    ) -> None:
+        cursor = self.conn.cursor()
+        cursor.execute(
+            """
+            INSERT INTO catalog_snapshots
+                (university, url, content_hash, etag, fetched_at, course_count)
+            VALUES (?, ?, ?, ?, ?, ?)
+            ON CONFLICT(university, url) DO UPDATE SET
+                content_hash=excluded.content_hash,
+                etag=excluded.etag,
+                fetched_at=excluded.fetched_at,
+                course_count=excluded.course_count
+            """,
+            (
+                university,
+                url,
+                content_hash,
+                etag,
+                datetime.utcnow().isoformat() + "Z",
+                course_count,
+            ),
+        )
+        self.conn.commit()
+
+    def refresh_courses_from_dicts(
+        self, university: str, courses: list, content_hash: str, url: str = ""
+    ) -> dict:
+        """
+        Upsert course dicts if snapshot hash changed; skip when unchanged (#6).
+
+        ``courses`` items are kwargs for Course / insert_course.
+        """
+        from .models import Course
+
+        url = url or f"snapshot://{university}"
+        prev = self.get_catalog_snapshot(university, url)
+        if prev and prev.get("content_hash") == content_hash:
+            return {
+                "skipped": True,
+                "reason": "unchanged",
+                "added": 0,
+                "updated": 0,
+                "total": prev.get("course_count") or 0,
+            }
+
+        added = updated = 0
+        for raw in courses:
+            data = dict(raw)
+            data.setdefault("university", university)
+            course = raw if isinstance(raw, Course) else Course(**data)
+            result = self.insert_course(course)
+            added += int(result.get("added", 0))
+            updated += int(result.get("updated", 0))
+
+        self.upsert_catalog_snapshot(
+            university, url, content_hash, course_count=len(courses)
+        )
+        return {
+            "skipped": False,
+            "added": added,
+            "updated": updated,
+            "total": len(courses),
+        }
 
     def insert_course(self, course: Course) -> Dict[str, Any]:
         """
