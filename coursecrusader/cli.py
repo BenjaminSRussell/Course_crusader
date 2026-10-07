@@ -429,22 +429,23 @@ def search(query: str, database: str, university: Optional[str], limit: int):
 
     try:
         db = CourseDatabase(database)
-        results = db.search_courses(query, university)
+        result = db.search_courses(query, university, limit=limit)
+        results = result["rows"]
 
         if not results:
             click.echo(f"No courses found matching '{query}'")
             return
 
-        click.echo(f"\n🔍 Found {len(results)} matching courses:\n")
+        click.echo(f"\n🔍 Found {result['total']} matching courses (showing {len(results)}):\n")
 
-        for i, course in enumerate(results[:limit]):
+        for i, course in enumerate(results):
             click.echo(f"{i+1}. {course['university']} {course['course_id']}: {course['title']}")
             if course.get('description'):
                 desc = course['description'][:100] + "..." if len(course['description']) > 100 else course['description']
                 click.echo(f"   {desc}\n")
 
-        if len(results) > limit:
-            click.echo(f"... and {len(results) - limit} more results")
+        if result.get("truncated"):
+            click.echo(f"... and {result['total'] - len(results)} more results")
 
         db.close()
 

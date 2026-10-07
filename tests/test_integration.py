@@ -55,7 +55,7 @@ class TestDatabaseIntegration:
             assert len(courses) == 2
 
 
-            results = db.search_courses("data", "TestU")
+            results = db.search_courses("data", "TestU")["rows"]
             assert len(results) == 1
             assert results[0]['course_id'] == "CS 102"
 
@@ -237,7 +237,7 @@ class TestEndToEndWorkflow:
             assert len(courses) == 2
 
 
-            results = db.search_courses("Data")
+            results = db.search_courses("Data")["rows"]
             assert len(results) == 1
 
             db.close()
