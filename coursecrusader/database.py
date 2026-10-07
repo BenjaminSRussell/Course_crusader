@@ -508,6 +508,79 @@ class CourseDatabase:
         with open(output_path, 'w', encoding='utf-8') as f:
             json.dump(courses, f, indent=2, ensure_ascii=False)
 
+    def export_to_parquet(
+        self,
+        output_path: str,
+        university: Optional[str] = None,
+        partition_by_university: bool = False,
+    ) -> int:
+        """
+        Export courses to Parquet for lakehouse / Data-visualizer handoff (#11).
+
+        Returns number of rows written. Requires ``pyarrow``.
+        When ``partition_by_university`` is True, writes a directory of
+        ``university=<name>/part-0.parquet`` datasets.
+        """
+        try:
+            import pyarrow as pa
+            import pyarrow.parquet as pq
+        except ImportError as e:  # pragma: no cover
+            raise ImportError(
+                "export --format parquet requires pyarrow; pip install pyarrow"
+            ) from e
+
+        if university:
+            courses = self.get_courses_by_university(university)
+        else:
+            cursor = self.conn.cursor()
+            cursor.execute("SELECT * FROM courses ORDER BY university, course_id")
+            courses = [dict(row) for row in cursor.fetchall()]
+
+        rows = []
+        for course in courses:
+            row = dict(course)
+            row.pop("id", None)
+            # Keep JSON columns as strings for stable schema; decode optional
+            rows.append(row)
+
+        if not rows:
+            # Write empty table with known columns
+            schema = pa.schema([
+                ("university", pa.string()),
+                ("course_id", pa.string()),
+                ("title", pa.string()),
+                ("description", pa.string()),
+                ("credits", pa.string()),
+                ("level", pa.string()),
+                ("department", pa.string()),
+                ("prerequisites_text", pa.string()),
+                ("prerequisites_json", pa.string()),
+                ("prerequisites_parsed", pa.bool_()),
+                ("corequisites_json", pa.string()),
+                ("restrictions", pa.string()),
+                ("offerings_json", pa.string()),
+                ("catalog_url", pa.string()),
+                ("last_updated", pa.string()),
+                ("notes", pa.string()),
+            ])
+            table = pa.Table.from_pylist([], schema=schema)
+        else:
+            table = pa.Table.from_pylist(rows)
+
+        out = Path(output_path)
+        if partition_by_university and not university:
+            out.mkdir(parents=True, exist_ok=True)
+            pq.write_to_dataset(
+                table,
+                root_path=str(out),
+                partition_cols=["university"],
+                existing_data_behavior="overwrite_or_ignore",
+            )
+        else:
+            out.parent.mkdir(parents=True, exist_ok=True)
+            pq.write_table(table, str(out))
+        return table.num_rows
+
     def close(self):
         """Close database connection."""
         self.conn.close()

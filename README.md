@@ -54,3 +54,15 @@ See [docs/SCRAPER_STATUS.md](docs/SCRAPER_STATUS.md) (regenerate with `coursecru
 
 `ROBOTSTXT_OBEY=True` with Scrapy `RobotsTxtMiddleware`. Default `DOWNLOAD_DELAY=1.0`; schools override via scraper `custom_settings` (e.g. UConn `1.5`).
 `PolitenessLoggingMiddleware` logs robots skips and effective delay.
+
+## Data-visualizer handoff
+
+Export SQLite catalogs to Parquet:
+
+```bash
+pip install pyarrow
+coursecrusader export -d courses.db -o courses.parquet
+```
+
+See [docs/PARQUET_EXPORT.md](docs/PARQUET_EXPORT.md).
+
