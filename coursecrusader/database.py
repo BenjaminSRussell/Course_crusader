@@ -128,6 +128,17 @@ class CourseDatabase:
 
 
         cursor.execute("""
+            CREATE TABLE IF NOT EXISTS course_edges (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                university TEXT NOT NULL,
+                from_course_id TEXT NOT NULL,
+                to_course_id TEXT NOT NULL,
+                edge_type TEXT NOT NULL DEFAULT 'prerequisite',
+                UNIQUE(university, from_course_id, to_course_id, edge_type)
+            )
+        """)
+
+        cursor.execute("""
             CREATE VIRTUAL TABLE IF NOT EXISTS courses_fts USING fts5(
                 university,
                 course_id,
@@ -722,6 +733,157 @@ class CourseDatabase:
         )
 
         self.conn.commit()
+
+
+    def rebuild_prerequisite_edges(self, university: Optional[str] = None) -> Dict[str, Any]:
+        """Derive course_edges from prerequisites_json (#5). Returns counts + cycles."""
+        cursor = self.conn.cursor()
+        if university:
+            cursor.execute("DELETE FROM course_edges WHERE university = ?", (university,))
+            cursor.execute(
+                "SELECT university, course_id, prerequisites_json FROM courses WHERE university = ?",
+                (university,),
+            )
+        else:
+            cursor.execute("DELETE FROM course_edges")
+            cursor.execute("SELECT university, course_id, prerequisites_json FROM courses")
+
+        rows = cursor.fetchall()
+        inserted = 0
+        for uni, cid, raw in rows:
+            if not raw:
+                continue
+            try:
+                tree = json.loads(raw)
+            except Exception:
+                continue
+            for prereq in self._flatten_prereq_codes(tree):
+                if not prereq or prereq == cid:
+                    continue
+                try:
+                    cursor.execute(
+                        """
+                        INSERT OR IGNORE INTO course_edges
+                            (university, from_course_id, to_course_id, edge_type)
+                        VALUES (?, ?, ?, 'prerequisite')
+                        """,
+                        (uni, prereq, cid),
+                    )
+                    inserted += cursor.rowcount
+                except Exception:
+                    pass
+        self.conn.commit()
+        cycles = self.detect_edge_cycles(university)
+        return {"edges": inserted, "cycles": cycles}
+
+    @staticmethod
+    def _flatten_prereq_codes(node) -> List[str]:
+        """Walk and/or trees or flat lists into course code strings."""
+        out: List[str] = []
+        if node is None:
+            return out
+        if isinstance(node, str):
+            return [node.strip()] if node.strip() else []
+        if isinstance(node, list):
+            for item in node:
+                out.extend(CourseDatabase._flatten_prereq_codes(item))
+            return out
+        if isinstance(node, dict):
+            for key in ("and", "or", "courses", "all_of", "any_of"):
+                if key in node:
+                    out.extend(CourseDatabase._flatten_prereq_codes(node[key]))
+            # bare {"course": "CSE 1010"} style
+            if "course" in node and isinstance(node["course"], str):
+                out.append(node["course"].strip())
+            return out
+        return out
+
+    def detect_edge_cycles(self, university: Optional[str] = None) -> List[List[str]]:
+        """Return list of cycles (each a list of course_ids) via DFS."""
+        cursor = self.conn.cursor()
+        if university:
+            cursor.execute(
+                "SELECT from_course_id, to_course_id FROM course_edges WHERE university = ?",
+                (university,),
+            )
+        else:
+            cursor.execute("SELECT from_course_id, to_course_id FROM course_edges")
+        graph: Dict[str, List[str]] = {}
+        for frm, to in cursor.fetchall():
+            graph.setdefault(frm, []).append(to)
+
+        cycles: List[List[str]] = []
+        visited = set()
+        stack = []
+        onstack = set()
+
+        def dfs(node: str):
+            visited.add(node)
+            onstack.add(node)
+            stack.append(node)
+            for nxt in graph.get(node, []):
+                if nxt not in visited:
+                    dfs(nxt)
+                elif nxt in onstack:
+                    if nxt in stack:
+                        i = stack.index(nxt)
+                        cycles.append(stack[i:] + [nxt])
+            stack.pop()
+            onstack.discard(node)
+
+        for n in list(graph.keys()):
+            if n not in visited:
+                dfs(n)
+        return cycles
+
+    def export_graph(
+        self, course_id: str, university: Optional[str] = None, fmt: str = "json"
+    ) -> str:
+        """Export prerequisite paths into ``course_id`` as JSON or DOT (#5)."""
+        cursor = self.conn.cursor()
+        if university:
+            cursor.execute(
+                """
+                SELECT from_course_id, to_course_id, edge_type, university
+                FROM course_edges
+                WHERE university = ?
+                """,
+                (university,),
+            )
+        else:
+            cursor.execute(
+                "SELECT from_course_id, to_course_id, edge_type, university FROM course_edges"
+            )
+        edges = [dict(row) for row in cursor.fetchall()]
+        # Filter to ancestors of course_id
+        target = course_id.strip()
+        reverse: Dict[str, List[str]] = {}
+        for e in edges:
+            reverse.setdefault(e["to_course_id"], []).append(e["from_course_id"])
+        keep = set()
+        stack = [target]
+        while stack:
+            n = stack.pop()
+            if n in keep:
+                continue
+            keep.add(n)
+            for p in reverse.get(n, []):
+                stack.append(p)
+        filtered = [
+            e
+            for e in edges
+            if e["from_course_id"] in keep and e["to_course_id"] in keep
+        ]
+        if fmt == "dot":
+            lines = ["digraph prereqs {"]
+            for e in filtered:
+                lines.append(
+                    f'  "{e["from_course_id"]}" -> "{e["to_course_id"]}" '
+                    f'[label="{e["edge_type"]}"];'
+                )
+            lines.append("}")
+            return "\n".join(lines)
+        return json.dumps({"course_id": target, "edges": filtered}, indent=2)
 
     def export_to_json(self, output_path: str, university: Optional[str] = None):
         """
