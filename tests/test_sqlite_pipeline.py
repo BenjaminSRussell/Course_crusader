@@ -1,4 +1,5 @@
 """SqlitePipeline upserts + scrape_metadata (#9)."""
+
 from pathlib import Path
 from unittest.mock import MagicMock
 

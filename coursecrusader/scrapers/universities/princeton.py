@@ -17,14 +17,14 @@ class PrincetonScraper(BaseCourseScraper):
     name = "princeton"
     university = "Princeton University"
 
-    start_urls = ['https://registrar.princeton.edu/course-offerings']
+    start_urls = ["https://registrar.princeton.edu/course-offerings"]
 
     custom_settings = {
-        'FEEDS': {
-            'princeton_courses.jsonl': {
-                'format': 'jsonlines',
-                'encoding': 'utf-8',
-                'overwrite': True,
+        "FEEDS": {
+            "princeton_courses.jsonl": {
+                "format": "jsonlines",
+                "encoding": "utf-8",
+                "overwrite": True,
             },
         },
     }
@@ -33,7 +33,7 @@ class PrincetonScraper(BaseCourseScraper):
         """Parse Princeton courses."""
         self.logger.info(f"Parsing Princeton courses: {response.url}")
 
-        course_blocks = response.css('.course')
+        course_blocks = response.css(".course")
 
         for block in course_blocks:
             course = self._parse_course_block(block, "Princeton", response.url)
@@ -42,12 +42,12 @@ class PrincetonScraper(BaseCourseScraper):
 
     def _parse_course_block(self, block, dept_name, page_url):
         """Parse course."""
-        title_elem = block.css('.course-title::text').get()
+        title_elem = block.css(".course-title::text").get()
 
         if not title_elem:
             return None
 
-        match = re.match(r'([A-Z]+)\s+(\d+)', title_elem)
+        match = re.match(r"([A-Z]+)\s+(\d+)", title_elem)
 
         if match:
             course_id = f"{match.group(1)} {match.group(2)}"
@@ -55,11 +55,11 @@ class PrincetonScraper(BaseCourseScraper):
             return self.create_course(
                 course_id=course_id,
                 title=title_elem,
-                description=block.css('.description::text').get() or "",
+                description=block.css(".description::text").get() or "",
                 credits=3,
                 level=self.infer_level(course_id),
                 department=dept_name,
-                catalog_url=page_url
+                catalog_url=page_url,
             )
 
         return None

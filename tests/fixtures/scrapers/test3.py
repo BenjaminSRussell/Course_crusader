@@ -2,11 +2,12 @@ import scrapy
 from ..base import BaseCourseScraper
 from ..registry import register_scraper
 
+
 @register_scraper
 class Test3Scraper(BaseCourseScraper):
     name = "test3"
     university = "Demo University Gamma"
-    start_urls = ['https://httpbin.org/html']
+    start_urls = ["https://httpbin.org/html"]
 
     def parse(self, response):
         courses = [
@@ -26,8 +27,8 @@ class Test3Scraper(BaseCourseScraper):
                 level=self.infer_level(code),
                 department=code.split()[0],
                 catalog_url=response.url,
-                **prereq_data
+                **prereq_data,
             )
             self.log_parse_success(course)
             yield course
-            self.stats['courses_scraped'] += 1
+            self.stats["courses_scraped"] += 1

@@ -14,11 +14,11 @@ class BaseCourseScraper(scrapy.Spider, ABC):
     # READY = live catalog parser; STUB = httpbin/demo sample courses (#7)
     readiness: str = "STUB"
     custom_settings = {
-        'FEEDS': {
-            'courses.jsonl': {
-                'format': 'jsonlines',
-                'encoding': 'utf-8',
-                'overwrite': True,
+        "FEEDS": {
+            "courses.jsonl": {
+                "format": "jsonlines",
+                "encoding": "utf-8",
+                "overwrite": True,
             },
         },
     }
@@ -27,10 +27,10 @@ class BaseCourseScraper(scrapy.Spider, ABC):
         super().__init__(*args, **kwargs)
         self.prereq_parser = PrerequisiteParser()
         self.stats = {
-            'courses_scraped': 0,
-            'courses_parsed': 0,
-            'parse_failures': 0,
-            'start_time': datetime.utcnow().isoformat(),
+            "courses_scraped": 0,
+            "courses_parsed": 0,
+            "parse_failures": 0,
+            "start_time": datetime.utcnow().isoformat(),
         }
 
     @abstractmethod
@@ -38,22 +38,27 @@ class BaseCourseScraper(scrapy.Spider, ABC):
         pass
 
     def create_course(self, **kwargs) -> Course:
-        if 'university' not in kwargs:
-            kwargs['university'] = self.university
-        if 'last_updated' not in kwargs:
-            kwargs['last_updated'] = datetime.utcnow().isoformat() + "Z"
+        if "university" not in kwargs:
+            kwargs["university"] = self.university
+        if "last_updated" not in kwargs:
+            kwargs["last_updated"] = datetime.utcnow().isoformat() + "Z"
         return Course(**kwargs)
 
     def parse_prerequisites(self, prereq_text: str) -> Dict[str, Any]:
         if not prereq_text:
-            return {'prerequisites': None, 'prerequisites_text': None, 'prerequisites_parsed': True}
+            return {"prerequisites": None, "prerequisites_text": None, "prerequisites_parsed": True}
         prereq_text = clean_text(prereq_text)
         structured, success = self.prereq_parser.parse(prereq_text)
-        return {'prerequisites': structured, 'prerequisites_text': prereq_text, 'prerequisites_parsed': success}
+        return {
+            "prerequisites": structured,
+            "prerequisites_text": prereq_text,
+            "prerequisites_parsed": success,
+        }
 
     def extract_course_id(self, text: str) -> Optional[str]:
         import re
-        pattern = r'\b([A-Z]{2,6})[\s\-]*(\d{3,4}[A-Z]?)\b'
+
+        pattern = r"\b([A-Z]{2,6})[\s\-]*(\d{3,4}[A-Z]?)\b"
         match = re.search(pattern, text)
         if match:
             return f"{match.group(1)} {match.group(2)}"
@@ -70,28 +75,31 @@ class BaseCourseScraper(scrapy.Spider, ABC):
         return Course.infer_level(course_id)
 
     def log_parse_success(self, course: Course):
-        self.stats['courses_parsed'] += 1
+        self.stats["courses_parsed"] += 1
         self.logger.debug(f"Parsed: {course.course_id} - {course.title}")
 
     def log_parse_failure(self, url: str, reason: str):
-        self.stats['parse_failures'] += 1
+        self.stats["parse_failures"] += 1
         self.logger.warning(f"Parse failure at {url}: {reason}")
 
     def closed(self, reason):
-        self.stats['end_time'] = datetime.utcnow().isoformat()
-        self.logger.info(f"Scraping Statistics for {self.university}: Courses Scraped: {self.stats['courses_scraped']}, Successfully Parsed: {self.stats['courses_parsed']}, Parse Failures: {self.stats['parse_failures']}, Success Rate: {self._calculate_success_rate():.2f}%, Duration: {self._calculate_duration()}")
+        self.stats["end_time"] = datetime.utcnow().isoformat()
+        self.logger.info(
+            f"Scraping Statistics for {self.university}: Courses Scraped: {self.stats['courses_scraped']}, Successfully Parsed: {self.stats['courses_parsed']}, Parse Failures: {self.stats['parse_failures']}, Success Rate: {self._calculate_success_rate():.2f}%, Duration: {self._calculate_duration()}"
+        )
 
     def _calculate_success_rate(self) -> float:
-        total = self.stats['courses_parsed'] + self.stats['parse_failures']
+        total = self.stats["courses_parsed"] + self.stats["parse_failures"]
         if total == 0:
             return 0.0
-        return (self.stats['courses_parsed'] / total) * 100
+        return (self.stats["courses_parsed"] / total) * 100
 
     def _calculate_duration(self) -> str:
         try:
             from datetime import datetime
-            start = datetime.fromisoformat(self.stats['start_time'])
-            end = datetime.fromisoformat(self.stats['end_time'])
+
+            start = datetime.fromisoformat(self.stats["start_time"])
+            end = datetime.fromisoformat(self.stats["end_time"])
             duration = end - start
             return str(duration)
         except:
@@ -104,6 +112,6 @@ class BaseCourseScraper(scrapy.Spider, ABC):
         if course:
             self.log_parse_success(course)
             yield course
-            self.stats['courses_scraped'] += 1
+            self.stats["courses_scraped"] += 1
         else:
             self.log_parse_failure(response_url, "Course block parsing returned None")

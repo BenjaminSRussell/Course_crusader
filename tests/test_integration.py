@@ -24,7 +24,6 @@ class TestDatabaseIntegration:
         with tempfile.TemporaryDirectory() as tmpdir:
             db_path = Path(tmpdir) / "test.db"
 
-
             db = CourseDatabase(str(db_path))
 
             course1 = Course(
@@ -34,7 +33,7 @@ class TestDatabaseIntegration:
                 description="Introduction to computer science",
                 credits=3,
                 level="Undergraduate",
-                department="Computer Science"
+                department="Computer Science",
             )
 
             course2 = Course(
@@ -44,20 +43,18 @@ class TestDatabaseIntegration:
                 description="Introduction to data structures",
                 credits=3,
                 level="Undergraduate",
-                department="Computer Science"
+                department="Computer Science",
             )
 
             db.insert_course(course1)
             db.insert_course(course2)
 
-
             courses = db.get_courses_by_university("TestU")
             assert len(courses) == 2
 
-
             results = db.search_courses("data", "TestU")["rows"]
             assert len(results) == 1
-            assert results[0]['course_id'] == "CS 102"
+            assert results[0]["course_id"] == "CS 102"
 
             db.close()
 
@@ -67,7 +64,6 @@ class TestDatabaseIntegration:
             db_path = Path(tmpdir) / "test.db"
             db = CourseDatabase(str(db_path))
 
-
             for i in range(5):
                 course = Course(
                     university="TestU",
@@ -76,13 +72,13 @@ class TestDatabaseIntegration:
                     description="Test course",
                     credits=3,
                     level="Undergraduate",
-                    department="CS"
+                    department="CS",
                 )
                 db.insert_course(course)
 
             stats = db.get_statistics()
-            assert stats['total_courses'] == 5
-            assert "TestU" in stats['by_university']
+            assert stats["total_courses"] == 5
+            assert "TestU" in stats["by_university"]
 
             db.close()
 
@@ -136,11 +132,7 @@ class TestValidationFramework:
 
     def test_validation_report(self):
         """Test validation report generation."""
-        report = ValidationReport(
-            university="TestU",
-            total_courses=50
-        )
-
+        report = ValidationReport(university="TestU", total_courses=50)
 
         course_id_metrics = ValidationMetrics(total=50, correct=50, incorrect=0, missing=0)
         title_metrics = ValidationMetrics(total=50, correct=48, incorrect=2, missing=0)
@@ -148,14 +140,12 @@ class TestValidationFramework:
         report.add_field_metric("course_id", course_id_metrics)
         report.add_field_metric("title", title_metrics)
 
-
         overall = report.overall_accuracy()
         assert overall == 98.0  # (50 + 48) / (50 + 50) * 100
 
-
         report_dict = report.to_dict()
-        assert report_dict['university'] == "TestU"
-        assert 'field_metrics' in report_dict
+        assert report_dict["university"] == "TestU"
+        assert "field_metrics" in report_dict
 
 
 class TestPDFParserIntegration:
@@ -177,17 +167,15 @@ class TestPDFParserIntegration:
         Prerequisite: CSE 2100.
         """
 
-
         courses = parser.split_into_courses(sample_text)
         assert len(courses) == 2
 
-
         course_data = parser.extract_course_from_text(courses[0])
         assert course_data is not None
-        assert course_data['course_id'] == "CSE 2100"
-        assert course_data['title'] == "Data Structures and Algorithms"
-        assert course_data['credits'] == 3
-        assert course_data['prerequisites_text'] is not None
+        assert course_data["course_id"] == "CSE 2100"
+        assert course_data["title"] == "Data Structures and Algorithms"
+        assert course_data["credits"] == 3
+        assert course_data["prerequisites_text"] is not None
 
 
 class TestEndToEndWorkflow:
@@ -200,42 +188,38 @@ class TestEndToEndWorkflow:
             jsonl_path = Path(tmpdir) / "courses.jsonl"
             db_path = Path(tmpdir) / "courses.db"
 
-
             test_courses = [
                 {
-                    'university': 'TestU',
-                    'course_id': 'CS 101',
-                    'title': 'Intro to CS',
-                    'description': 'Introduction',
-                    'credits': 3,
-                    'level': 'Undergraduate',
-                    'department': 'CS'
+                    "university": "TestU",
+                    "course_id": "CS 101",
+                    "title": "Intro to CS",
+                    "description": "Introduction",
+                    "credits": 3,
+                    "level": "Undergraduate",
+                    "department": "CS",
                 },
                 {
-                    'university': 'TestU',
-                    'course_id': 'CS 102',
-                    'title': 'Data Structures',
-                    'description': 'Data structures',
-                    'credits': 3,
-                    'level': 'Undergraduate',
-                    'department': 'CS'
-                }
+                    "university": "TestU",
+                    "course_id": "CS 102",
+                    "title": "Data Structures",
+                    "description": "Data structures",
+                    "credits": 3,
+                    "level": "Undergraduate",
+                    "department": "CS",
+                },
             ]
 
-            with open(jsonl_path, 'w') as f:
+            with open(jsonl_path, "w") as f:
                 for course in test_courses:
-                    f.write(json.dumps(course) + '\n')
-
+                    f.write(json.dumps(course) + "\n")
 
             db = CourseDatabase(str(db_path))
             for course_data in test_courses:
                 course = Course(**course_data)
                 db.insert_course(course)
 
-
             courses = db.get_courses_by_university("TestU")
             assert len(courses) == 2
-
 
             results = db.search_courses("Data")["rows"]
             assert len(results) == 1

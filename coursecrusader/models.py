@@ -18,6 +18,7 @@ class Course:
     This class represents a single course from any university catalog,
     normalized to a consistent structure.
     """
+
     university: str
     course_id: str
     title: str
@@ -57,9 +58,9 @@ class Course:
             "CS  101" -> "CS 101"
             "MATH-2410Q" -> "MATH 2410Q"
         """
-        course_id = re.sub(r'[-\s]+', ' ', course_id.strip())
-        course_id = re.sub(r'([A-Z]+)(\d)', r'\1 \2', course_id)
-        course_id = re.sub(r'\s+', ' ', course_id)
+        course_id = re.sub(r"[-\s]+", " ", course_id.strip())
+        course_id = re.sub(r"([A-Z]+)(\d)", r"\1 \2", course_id)
+        course_id = re.sub(r"\s+", " ", course_id)
         return course_id.upper()
 
     @staticmethod
@@ -72,7 +73,7 @@ class Course:
             - 3000-4999: Undergraduate upper division
             - 5000-9999: Graduate
         """
-        match = re.search(r'\d+', course_id)
+        match = re.search(r"\d+", course_id)
         if match:
             number = int(match.group())
             if number < 5000:
@@ -95,18 +96,25 @@ class Course:
         """
         errors = []
 
-        required = ['university', 'course_id', 'title', 'description',
-                   'credits', 'level', 'department']
+        required = [
+            "university",
+            "course_id",
+            "title",
+            "description",
+            "credits",
+            "level",
+            "department",
+        ]
         for field_name in required:
             value = getattr(self, field_name)
             if not value or (isinstance(value, str) and not value.strip()):
                 errors.append(f"Missing required field: {field_name}")
 
-        if not re.match(r'^[A-Z]{2,6}\s*\d{3,4}[A-Z]?$', self.course_id):
+        if not re.match(r"^[A-Z]{2,6}\s*\d{3,4}[A-Z]?$", self.course_id):
             errors.append(f"Invalid course_id format: {self.course_id}")
 
         if isinstance(self.credits, str):
-            if not re.match(r'^\d+(-\d+)?$', str(self.credits)):
+            if not re.match(r"^\d+(-\d+)?$", str(self.credits)):
                 errors.append(f"Invalid credits format: {self.credits}")
         elif not isinstance(self.credits, (int, float)):
             errors.append(f"Credits must be number or string: {self.credits}")
@@ -125,6 +133,7 @@ class CatalogMetadata:
 
     Tracks information about the scraping run for quality assurance.
     """
+
     university: str
     scrape_date: str
     total_courses: int
@@ -144,5 +153,5 @@ class CatalogMetadata:
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary."""
         data = asdict(self)
-        data['success_rate'] = self.success_rate
+        data["success_rate"] = self.success_rate
         return data

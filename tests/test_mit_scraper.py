@@ -1,6 +1,7 @@
 import unittest
 from coursecrusader.scrapers.universities.mit import MITScraper
 
+
 class TestMITScraper(unittest.TestCase):
     def setUp(self):
         self.scraper = MITScraper()

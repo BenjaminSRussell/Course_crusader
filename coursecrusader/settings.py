@@ -7,12 +7,12 @@ commonly used. You can find more settings consulting the documentation:
     https://docs.scrapy.org/en/latest/topics/settings.html
 """
 
-BOT_NAME = 'coursecrusader'
+BOT_NAME = "coursecrusader"
 
-SPIDER_MODULES = ['coursecrusader.scrapers.universities']
-NEWSPIDER_MODULE = 'coursecrusader.scrapers.universities'
+SPIDER_MODULES = ["coursecrusader.scrapers.universities"]
+NEWSPIDER_MODULE = "coursecrusader.scrapers.universities"
 
-USER_AGENT = 'CourseCrusader/0.1.0 (+https://github.com/BenjaminSRussell/Course_crusader)'
+USER_AGENT = "CourseCrusader/0.1.0 (+https://github.com/BenjaminSRussell/Course_crusader)"
 
 ROBOTSTXT_OBEY = True
 
@@ -27,28 +27,28 @@ COOKIES_ENABLED = False
 TELNETCONSOLE_ENABLED = False
 
 DEFAULT_REQUEST_HEADERS = {
-    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-    'Accept-Language': 'en-US,en;q=0.9',
+    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+    "Accept-Language": "en-US,en;q=0.9",
 }
 
 SPIDER_MIDDLEWARES = {
-    'coursecrusader.middlewares.CourseCrusaderSpiderMiddleware': 543,
+    "coursecrusader.middlewares.CourseCrusaderSpiderMiddleware": 543,
 }
 
 DOWNLOADER_MIDDLEWARES = {
-    'scrapy.downloadermiddlewares.robotstxt.RobotsTxtMiddleware': 100,
-    'coursecrusader.middlewares.PolitenessLoggingMiddleware': 110,
-    'coursecrusader.middlewares.CourseCrusaderDownloaderMiddleware': 543,
+    "scrapy.downloadermiddlewares.robotstxt.RobotsTxtMiddleware": 100,
+    "coursecrusader.middlewares.PolitenessLoggingMiddleware": 110,
+    "coursecrusader.middlewares.CourseCrusaderDownloaderMiddleware": 543,
 }
 
 ITEM_PIPELINES = {
-    'coursecrusader.pipelines.ValidationPipeline': 100,
-    'coursecrusader.pipelines.DeduplicationPipeline': 200,
-    'coursecrusader.pipelines.SqlitePipeline': 300,
+    "coursecrusader.pipelines.ValidationPipeline": 100,
+    "coursecrusader.pipelines.DeduplicationPipeline": 200,
+    "coursecrusader.pipelines.SqlitePipeline": 300,
 }
 
 # SQLite catalog path (#9). Override via env COURSECRUSADER_DB_PATH or -s.
-COURSECRUSADER_DB_PATH = 'courses.db'
+COURSECRUSADER_DB_PATH = "courses.db"
 
 AUTOTHROTTLE_ENABLED = True
 AUTOTHROTTLE_START_DELAY = 1
@@ -60,27 +60,27 @@ AUTOTHROTTLE_DEBUG = False
 # See https://docs.scrapy.org/en/latest/topics/downloader-middleware.html#httpcache-middleware-settings
 HTTPCACHE_ENABLED = True
 HTTPCACHE_EXPIRATION_SECS = 86400  # 24 hours
-HTTPCACHE_DIR = 'httpcache'
+HTTPCACHE_DIR = "httpcache"
 HTTPCACHE_IGNORE_HTTP_CODES = [500, 502, 503, 504, 400, 403, 404, 408]
-HTTPCACHE_STORAGE = 'scrapy.extensions.httpcache.FilesystemCacheStorage'
+HTTPCACHE_STORAGE = "scrapy.extensions.httpcache.FilesystemCacheStorage"
 
 # Set settings whose default value is deprecated to a future-proof value
-REQUEST_FINGERPRINTER_IMPLEMENTATION = '2.7'
-TWISTED_REACTOR = 'twisted.internet.asyncioreactor.AsyncioSelectorReactor'
-FEED_EXPORT_ENCODING = 'utf-8'
+REQUEST_FINGERPRINTER_IMPLEMENTATION = "2.7"
+TWISTED_REACTOR = "twisted.internet.asyncioreactor.AsyncioSelectorReactor"
+FEED_EXPORT_ENCODING = "utf-8"
 
 FEEDS = {
-    'output.jsonl': {
-        'format': 'jsonlines',
-        'encoding': 'utf-8',
-        'store_empty': False,
-        'overwrite': True,
+    "output.jsonl": {
+        "format": "jsonlines",
+        "encoding": "utf-8",
+        "store_empty": False,
+        "overwrite": True,
     },
 }
 
-LOG_LEVEL = 'INFO'
-LOG_FORMAT = '%(asctime)s [%(name)s] %(levelname)s: %(message)s'
-LOG_DATEFORMAT = '%Y-%m-%d %H:%M:%S'
+LOG_LEVEL = "INFO"
+LOG_FORMAT = "%(asctime)s [%(name)s] %(levelname)s: %(message)s"
+LOG_DATEFORMAT = "%Y-%m-%d %H:%M:%S"
 
 
 # --- Politeness (#12) ---

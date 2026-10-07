@@ -20,7 +20,7 @@ class TestCourse:
             description="Introduction to data structures and algorithms",
             credits=3,
             level="Undergraduate",
-            department="Computer Science & Engineering"
+            department="Computer Science & Engineering",
         )
 
         assert course.university == "UConn"
@@ -39,7 +39,7 @@ class TestCourse:
             description="Test",
             credits=3,
             level="Undergraduate",
-            department="Test"
+            department="Test",
         )
         assert course1.course_id == "CSE 2100"
 
@@ -51,7 +51,7 @@ class TestCourse:
             description="Test",
             credits=3,
             level="Undergraduate",
-            department="Test"
+            department="Test",
         )
         assert course2.course_id == "CSE 2100"
 
@@ -63,7 +63,7 @@ class TestCourse:
             description="Test",
             credits=3,
             level="Undergraduate",
-            department="Test"
+            department="Test",
         )
         assert course3.course_id == "CSE 2100"
 
@@ -85,7 +85,7 @@ class TestCourse:
             description="Introduction to data structures",
             credits=3,
             level="Undergraduate",
-            department="CSE"
+            department="CSE",
         )
 
         is_valid, errors = course.validate()
@@ -101,7 +101,7 @@ class TestCourse:
             description="Test",
             credits=3,
             level="Undergraduate",
-            department="CSE"
+            department="CSE",
         )
 
         is_valid, errors = course.validate()
@@ -118,7 +118,7 @@ class TestCourse:
             description="Test",
             credits=3,
             level="Undergraduate",
-            department="CSE"
+            department="CSE",
         )
 
         is_valid, errors = course.validate()
@@ -137,16 +137,16 @@ class TestCourse:
             department="CSE",
             prerequisites={"and": ["CSE 1010"]},
             prerequisites_text="CSE 1010",
-            prerequisites_parsed=True
+            prerequisites_parsed=True,
         )
 
         data = course.to_dict()
 
         assert isinstance(data, dict)
-        assert data['university'] == "UConn"
-        assert data['course_id'] == "CSE 2100"
-        assert data['prerequisites'] == {"and": ["CSE 1010"]}
-        assert 'last_updated' in data
+        assert data["university"] == "UConn"
+        assert data["course_id"] == "CSE 2100"
+        assert data["prerequisites"] == {"and": ["CSE 1010"]}
+        assert "last_updated" in data
 
     def test_last_updated_auto_set(self):
         """Test that last_updated is automatically set."""
@@ -157,11 +157,11 @@ class TestCourse:
             description="Test",
             credits=3,
             level="Undergraduate",
-            department="CSE"
+            department="CSE",
         )
 
         assert course.last_updated is not None
-        assert 'T' in course.last_updated  # ISO format
+        assert "T" in course.last_updated  # ISO format
 
 
 class TestCatalogMetadata:
@@ -176,7 +176,7 @@ class TestCatalogMetadata:
             successful_parses=950,
             failed_parses=50,
             catalog_url="https://example.com",
-            scraper_version="0.1.0"
+            scraper_version="0.1.0",
         )
 
         assert metadata.university == "UConn"
@@ -192,7 +192,7 @@ class TestCatalogMetadata:
             successful_parses=900,
             failed_parses=100,
             catalog_url="https://example.com",
-            scraper_version="0.1.0"
+            scraper_version="0.1.0",
         )
 
         assert metadata.success_rate == 90.0
@@ -206,7 +206,7 @@ class TestCatalogMetadata:
             successful_parses=0,
             failed_parses=0,
             catalog_url="https://example.com",
-            scraper_version="0.1.0"
+            scraper_version="0.1.0",
         )
 
         assert metadata.success_rate == 0.0

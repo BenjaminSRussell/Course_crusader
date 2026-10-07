@@ -22,11 +22,7 @@ class MITScraper(BaseCourseScraper):
 
     name = "mit"
     university = "Massachusetts Institute of Technology"
-    start_urls = [
-        'http://catalog.mit.edu/subjects/'
-    ]
-
-
+    start_urls = ["http://catalog.mit.edu/subjects/"]
 
     def parse(self, response):
         """
@@ -41,10 +37,7 @@ class MITScraper(BaseCourseScraper):
         subject_links = response.css('a[href*="/subjects/"]::attr(href)').getall()
 
         # Filter to only numeric subject pages
-        subject_links = [
-            link for link in subject_links
-            if re.search(r'/subjects/[\w-]+/$', link)
-        ]
+        subject_links = [link for link in subject_links if re.search(r"/subjects/[\w-]+/$", link)]
 
         self.logger.info(f"Found {len(subject_links)} subject areas")
 
@@ -64,7 +57,7 @@ class MITScraper(BaseCourseScraper):
 
         # MIT uses different selectors - adapt based on actual structure
         # This is a template that would need to be adjusted to MIT's actual HTML
-        course_blocks = response.css('div.course, div.subject-course')
+        course_blocks = response.css("div.course, div.subject-course")
 
         if not course_blocks:
             # Alternative: look for any structure with course numbers
@@ -79,17 +72,17 @@ class MITScraper(BaseCourseScraper):
 
     def _extract_department_name(self, response) -> str:
         """Extract department name from subject page."""
-        title = response.css('h1::text').get()
+        title = response.css("h1::text").get()
         if title:
             return title.strip()
 
-        page_title = response.css('title::text').get()
+        page_title = response.css("title::text").get()
         if page_title:
             # Remove "| MIT Catalog" or similar
-            title = re.sub(r'\s*\|.*$', '', page_title)
+            title = re.sub(r"\s*\|.*$", "", page_title)
             return title.strip()
 
-        match = re.search(r'/subjects/([\w-]+)/', response.url)
+        match = re.search(r"/subjects/([\w-]+)/", response.url)
         if match:
             return f"Course {match.group(1)}"
 
@@ -101,11 +94,11 @@ class MITScraper(BaseCourseScraper):
 
         MIT course format: "6.001 Structure and Interpretation of Computer Programs"
         """
-        text = ' '.join(block.css('::text').getall())
+        text = " ".join(block.css("::text").getall())
         text = clean_text(text)
 
         # Extract course number (MIT format like "6.001" or "18.01")
-        course_match = re.search(r'(\d+\.[\dA-Z]+)', text)
+        course_match = re.search(r"(\d+\.[\dA-Z]+)", text)
         if not course_match:
             return None
 
@@ -115,24 +108,24 @@ class MITScraper(BaseCourseScraper):
         course_id = course_num
 
         # Extract title - usually after the course number
-        title_match = re.search(rf'{re.escape(course_num)}\s+(.+?)(?:\.|$)', text)
+        title_match = re.search(rf"{re.escape(course_num)}\s+(.+?)(?:\.|$)", text)
         if title_match:
             title = title_match.group(1).strip()
         else:
             title = "Unknown"
 
         # Extract description - typically in a separate element or paragraph
-        desc_elem = block.css('p.description::text, .course-desc::text').get()
+        desc_elem = block.css("p.description::text, .course-desc::text").get()
         description = clean_text(desc_elem) if desc_elem else text
 
         # Extract credits (units in MIT terminology)
         credits = extract_credits(text)
         if not credits:
             # MIT often uses format like "3-0-9" (lecture-lab-preparation hours)
-            units_match = re.search(r'(\d+-\d+-\d+)', text)
+            units_match = re.search(r"(\d+-\d+-\d+)", text)
             if units_match:
                 # Convert to total units (first number is usually credit hours)
-                units = units_match.group(1).split('-')
+                units = units_match.group(1).split("-")
                 credits = int(units[0])
 
         prereq_data = self._extract_prerequisites(text, description)
@@ -149,21 +142,21 @@ class MITScraper(BaseCourseScraper):
             level=level,
             department=dept_name,
             catalog_url=page_url,
-            **prereq_data
+            **prereq_data,
         )
 
         return course
 
     def _infer_mit_level(self, course_num: str) -> str:
         """Infer course level from MIT course number."""
-        parts = course_num.split('.')
+        parts = course_num.split(".")
 
         if len(parts) > 1:
             num_str = parts[1]
         else:
             num_str = parts[0]
 
-        num_str = ''.join(filter(str.isdigit, num_str))
+        num_str = "".join(filter(str.isdigit, num_str))
 
         if not num_str:
             return "Unknown"
@@ -181,9 +174,9 @@ class MITScraper(BaseCourseScraper):
     def _extract_prerequisites(self, text: str, description: str) -> dict:
         """Extract prerequisites from course text."""
         prereq_match = re.search(
-            r'(?:prerequisite|prereq)[s]?\s*[:\-]\s*([^.;]+)',
-            text + ' ' + description,
-            re.IGNORECASE
+            r"(?:prerequisite|prereq)[s]?\s*[:\-]\s*([^.;]+)",
+            text + " " + description,
+            re.IGNORECASE,
         )
 
         if prereq_match:
@@ -191,7 +184,7 @@ class MITScraper(BaseCourseScraper):
             return self.parse_prerequisites(prereq_text)
 
         return {
-            'prerequisites': None,
-            'prerequisites_text': None,
-            'prerequisites_parsed': True,
+            "prerequisites": None,
+            "prerequisites_text": None,
+            "prerequisites_parsed": True,
         }

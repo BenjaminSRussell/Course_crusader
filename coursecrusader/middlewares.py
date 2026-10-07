@@ -29,7 +29,7 @@ class CourseCrusaderSpiderMiddleware:
             yield r
 
     def spider_opened(self, spider):
-        spider.logger.info(f'Spider opened: {spider.name}')
+        spider.logger.info(f"Spider opened: {spider.name}")
 
 
 class CourseCrusaderDownloaderMiddleware:
@@ -51,7 +51,7 @@ class CourseCrusaderDownloaderMiddleware:
         pass
 
     def spider_opened(self, spider):
-        spider.logger.info(f'Spider opened: {spider.name}')
+        spider.logger.info(f"Spider opened: {spider.name}")
 
 
 class PolitenessLoggingMiddleware:
@@ -71,8 +71,10 @@ class PolitenessLoggingMiddleware:
             spider.logger.info(
                 "robots.txt skipped %s (school delay=%s)",
                 request.url,
-                spider.custom_settings.get("DOWNLOAD_DELAY")
-                if getattr(spider, "custom_settings", None)
-                else spider.settings.get("DOWNLOAD_DELAY"),
+                (
+                    spider.custom_settings.get("DOWNLOAD_DELAY")
+                    if getattr(spider, "custom_settings", None)
+                    else spider.settings.get("DOWNLOAD_DELAY")
+                ),
             )
         return None

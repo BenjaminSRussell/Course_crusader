@@ -8,14 +8,14 @@ class BrownScraper(BaseCourseScraper):
     name = "brown"
     university = "Brown University"
     readiness = "STUB"
-    start_urls = ['https://httpbin.org/html']
+    start_urls = ["https://httpbin.org/html"]
 
     custom_settings = {
-        'FEEDS': {
-            'brown_courses.jsonl': {
-                'format': 'jsonlines',
-                'encoding': 'utf-8',
-                'overwrite': True,
+        "FEEDS": {
+            "brown_courses.jsonl": {
+                "format": "jsonlines",
+                "encoding": "utf-8",
+                "overwrite": True,
             },
         },
     }
@@ -35,8 +35,8 @@ class BrownScraper(BaseCourseScraper):
                 credits=credits,
                 level=self.infer_level(code),
                 department=code.split()[0],
-                catalog_url=response.url
+                catalog_url=response.url,
             )
             self.log_parse_success(course)
             yield course
-            self.stats['courses_scraped'] += 1
+            self.stats["courses_scraped"] += 1

@@ -82,6 +82,7 @@ def register_scraper(scraper_class: Type[BaseCourseScraper]) -> Type[BaseCourseS
     ScraperRegistry.register(scraper_class)
     return scraper_class
 
+
 def readiness_matrix():
     """Return sorted list of (name, university, readiness) for all scrapers (#7)."""
     rows = []

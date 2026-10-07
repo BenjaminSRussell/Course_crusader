@@ -1,4 +1,5 @@
 """Scraper READY/STUB matrix (#7)."""
+
 from coursecrusader.scrapers.universities import *  # noqa: F401,F403
 from coursecrusader.scrapers.registry import readiness_matrix, write_status_md
 

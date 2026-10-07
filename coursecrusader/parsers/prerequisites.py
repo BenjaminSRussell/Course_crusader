@@ -11,6 +11,7 @@ from typing import Any, Dict, List, Optional
 
 from .text_utils import clean_text
 
+
 class PrerequisiteParser:
     """
     Parse prerequisite strings into structured format.
@@ -23,40 +24,40 @@ class PrerequisiteParser:
     """
 
     # Common course code pattern
-    COURSE_PATTERN = r'\b([A-Z]{2,6})[\s-]*(\d{3,4}[A-Z]?)\b'
+    COURSE_PATTERN = r"\b([A-Z]{2,6})[\s-]*(\d{3,4}[A-Z]?)\b"
 
     # Keywords that indicate non-course prerequisites
     NON_COURSE_KEYWORDS = [
-        'permission of instructor',
-        'instructor consent',
-        'department consent',
-        'instructor permission',
-        'junior standing',
-        'senior standing',
-        'sophomore standing',
-        'freshman standing',
-        'graduate standing',
-        'admission to',
-        'minimum grade',
-        'grade of',
-        'gpa',
-        'open only to',
-        'restricted to',
-        'majors only',
-        'concurrent enrollment',
-        'consent required',
-        'departmental approval',
-        'by invitation',
-        'audition required',
-       'portfolio review',
-        'prerequisite waiver',
+        "permission of instructor",
+        "instructor consent",
+        "department consent",
+        "instructor permission",
+        "junior standing",
+        "senior standing",
+        "sophomore standing",
+        "freshman standing",
+        "graduate standing",
+        "admission to",
+        "minimum grade",
+        "grade of",
+        "gpa",
+        "open only to",
+        "restricted to",
+        "majors only",
+        "concurrent enrollment",
+        "consent required",
+        "departmental approval",
+        "by invitation",
+        "audition required",
+        "portfolio review",
+        "prerequisite waiver",
     ]
 
     # Grade requirement patterns
     GRADE_PATTERNS = [
-        r'minimum grade of\s+([A-F][+-]?)',
-        r'grade of\s+([A-F][+-]?)\s+or\s+(better|higher)',
-        r'([A-F][+-]?)\s+or\s+(better|higher)',
+        r"minimum grade of\s+([A-F][+-]?)",
+        r"grade of\s+([A-F][+-]?)\s+or\s+(better|higher)",
+        r"([A-F][+-]?)\s+or\s+(better|higher)",
     ]
 
     def __init__(self):
@@ -142,11 +143,11 @@ class PrerequisiteParser:
         text_lower = text.lower()
 
         # Check for parentheses (nested structure)
-        if '(' in text:
+        if "(" in text:
             return self._parse_nested(text, courses)
 
-        has_and = ' and ' in text_lower
-        has_or = ' or ' in text_lower
+        has_and = " and " in text_lower
+        has_or = " or " in text_lower
 
         if has_and and has_or:
             # Complex case - try to parse carefully
@@ -168,7 +169,7 @@ class PrerequisiteParser:
 
         Example: "CSE 2100 and (MATH 2210Q or MATH 2410Q)"
         """
-        paren_pattern = r'\(([^)]+)\)'
+        paren_pattern = r"\(([^)]+)\)"
         matches = list(re.finditer(paren_pattern, text))
 
         if not matches:
@@ -178,22 +179,22 @@ class PrerequisiteParser:
         # More complex nesting would require recursive parsing
         if len(matches) == 1:
             paren_group = matches[0].group(1)
-            before_paren = text[:matches[0].start()].strip()
-            after_paren = text[matches[0].end():].strip()
+            before_paren = text[: matches[0].start()].strip()
+            after_paren = text[matches[0].end() :].strip()
 
             paren_courses = self._extract_courses(paren_group)
 
-            if ' or ' in paren_group.lower():
+            if " or " in paren_group.lower():
                 paren_struct = {"or": paren_courses}
             else:
                 paren_struct = {"and": paren_courses}
 
             outside_courses = self._extract_courses(before_paren + " " + after_paren)
 
-            if ' and ' in text.lower() and '(' in text:
+            if " and " in text.lower() and "(" in text:
                 all_parts = outside_courses + [paren_struct]
                 return {"and": all_parts}
-            elif ' or ' in text.lower():
+            elif " or " in text.lower():
                 all_parts = outside_courses + [paren_struct]
                 return {"or": all_parts}
             else:
@@ -213,7 +214,7 @@ class PrerequisiteParser:
         # we can't reliably parse - return None
         text_lower = text.lower()
 
-        if ' and ' in text_lower and ' or ' in text_lower:
+        if " and " in text_lower and " or " in text_lower:
             return None
 
         return {"and": courses}
@@ -227,7 +228,7 @@ class PrerequisiteParser:
         if not text:
             return None
 
-        coreq_pattern = r'corequisite[s]?\s*:?\s*(.+?)(?:[.;]|$)'
+        coreq_pattern = r"corequisite[s]?\s*:?\s*(.+?)(?:[.;]|$)"
         match = re.search(coreq_pattern, text, re.IGNORECASE)
 
         if match:

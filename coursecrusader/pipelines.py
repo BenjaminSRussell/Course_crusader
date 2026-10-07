@@ -26,9 +26,7 @@ class ValidationPipeline:
             is_valid, errors = item.validate()
 
             if not is_valid:
-                spider.logger.warning(
-                    f"Validation failed for {item.course_id}: {errors}"
-                )
+                spider.logger.warning(f"Validation failed for {item.course_id}: {errors}")
                 if item.notes:
                     item.notes += f" | Validation warnings: {'; '.join(errors)}"
                 else:
@@ -41,9 +39,7 @@ class ValidationPipeline:
             is_valid, errors = course.validate()
 
             if not is_valid:
-                spider.logger.warning(
-                    f"Validation failed for {course.course_id}: {errors}"
-                )
+                spider.logger.warning(f"Validation failed for {course.course_id}: {errors}")
                 course.notes = f"Validation warnings: {'; '.join(errors)}"
 
             return course
@@ -70,7 +66,7 @@ class DeduplicationPipeline:
         if isinstance(item, Course):
             key = (item.university, item.course_id)
         else:
-            key = (adapter.get('university'), adapter.get('course_id'))
+            key = (adapter.get("university"), adapter.get("course_id"))
 
         if key in self.seen_courses:
             spider.logger.debug(f"Duplicate course dropped: {key[0]} {key[1]}")

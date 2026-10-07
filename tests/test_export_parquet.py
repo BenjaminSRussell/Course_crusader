@@ -1,4 +1,5 @@
 """Parquet export row-count parity (#11)."""
+
 from pathlib import Path
 
 import pyarrow.parquet as pq
