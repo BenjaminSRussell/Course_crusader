@@ -456,3 +456,65 @@ def search(query: str, database: str, university: Optional[str], limit: int):
 
 if __name__ == '__main__':
     main()
+
+
+@cli.command('corequisite')
+@click.argument('course_id')
+@click.option(
+    '--database',
+    '-d',
+    type=click.Path(exists=True),
+    default='courses.db',
+    help='SQLite database file',
+)
+@click.option('--university', '-u', help='Filter by university')
+def corequisite(course_id: str, database: str, university: Optional[str]):
+    """List courses that list COURSE_ID as a corequisite."""
+    from .database import CourseDatabase
+
+    db = CourseDatabase(database)
+    try:
+        result = db.courses_with_corequisite(course_id, university)
+        rows = result["rows"]
+        if not rows:
+            click.echo(f"No courses list '{course_id}' as a corequisite")
+            return
+        click.echo(f"Found {len(rows)} course(s) with corequisite {course_id}:")
+        for course in rows:
+            click.echo(f"  {course['university']} {course['course_id']}: {course['title']}")
+        if result.get("skipped_invalid"):
+            click.echo(f"(skipped {result['skipped_invalid']} row(s) with invalid JSON)")
+    finally:
+        db.close()
+
+
+@cli.command('offered')
+@click.argument('term')
+@click.option(
+    '--database',
+    '-d',
+    type=click.Path(exists=True),
+    default='courses.db',
+    help='SQLite database file',
+)
+def offered(term: str, database: str):
+    """List courses offered in TERM (Fall/Spring/Summer/Winter/Year-round)."""
+    from .database import CourseDatabase
+
+    db = CourseDatabase(database)
+    try:
+        result = db.courses_offered_in(term)
+        rows = result["rows"]
+        if not rows:
+            click.echo(f"No courses offered in '{term}'")
+            return
+        click.echo(f"Found {len(rows)} course(s) offered in {term}:")
+        for course in rows:
+            click.echo(f"  {course['university']} {course['course_id']}: {course['title']}")
+        if result.get("skipped_invalid"):
+            click.echo(f"(skipped {result['skipped_invalid']} row(s) with invalid JSON)")
+    except ValueError as exc:
+        click.echo(f"Error: {exc}", err=True)
+        raise SystemExit(2)
+    finally:
+        db.close()
