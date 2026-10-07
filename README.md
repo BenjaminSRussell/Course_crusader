@@ -91,3 +91,13 @@ coursecrusader refresh -u UConn -i uconn_courses.jsonl -d courses.db
 
 Uses a SHA-256 snapshot of the input file; unchanged content is skipped.
 
+## Querying the catalog (#4)
+
+```bash
+coursecrusader search "linear algebra" -d courses.db
+coursecrusader search "calculus" -u MIT
+coursecrusader explore -d courses.db   # FastAPI UI — pip install fastapi uvicorn
+```
+
+Search uses SQLite **FTS5** (ranked); falls back to LIKE if needed.
+

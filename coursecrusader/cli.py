@@ -494,6 +494,23 @@ def db_stats(database: str, university: Optional[str]):
         sys.exit(1)
 
 
+
+
+@main.command("explore")
+@click.option("--database", "-d", default="courses.db", show_default=True)
+@click.option("--host", default="127.0.0.1", show_default=True)
+@click.option("--port", default=8765, show_default=True, type=int)
+def explore_cmd(database: str, host: str, port: int):
+    """Launch the catalog explorer UI (FastAPI) (#4)."""
+    try:
+        from .explorer.app import main as explore_main
+    except ImportError as e:
+        click.echo(f"Explorer requires fastapi+uvicorn: {e}", err=True)
+        sys.exit(1)
+    click.echo(f"Opening explorer on http://{host}:{port} (db={database})")
+    explore_main(db_path=database, host=host, port=port)
+
+
 @main.command()
 @click.argument("query")
 @click.option(

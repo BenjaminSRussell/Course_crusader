@@ -126,6 +126,27 @@ class CourseDatabase:
             )
         """)
 
+
+        cursor.execute("""
+            CREATE VIRTUAL TABLE IF NOT EXISTS courses_fts USING fts5(
+                university,
+                course_id,
+                title,
+                description,
+                department
+            )
+        """)
+
+        # Backfill FTS if empty but courses exist
+        cursor.execute("SELECT COUNT(*) FROM courses_fts")
+        if cursor.fetchone()[0] == 0:
+            cursor.execute(
+                """
+                INSERT INTO courses_fts(rowid, university, course_id, title, description, department)
+                SELECT id, university, course_id, title, description, department FROM courses
+                """
+            )
+
         self.conn.commit()
 
 
@@ -303,6 +324,23 @@ class CourseDatabase:
         self.conn.commit()
         row = self.get_course(course.university, course.course_id)
         row_id = row["id"] if row else cursor.lastrowid
+        if row_id:
+            cursor.execute("DELETE FROM courses_fts WHERE rowid = ?", (row_id,))
+            cursor.execute(
+                """
+                INSERT INTO courses_fts(rowid, university, course_id, title, description, department)
+                VALUES (?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    row_id,
+                    course.university,
+                    course.course_id,
+                    course.title,
+                    course.description,
+                    course.department,
+                ),
+            )
+            self.conn.commit()
         if existing:
             return {"row_id": row_id, "added": 0, "updated": 1}
         return {"row_id": row_id, "added": 1, "updated": 0}
@@ -402,58 +440,114 @@ class CourseDatabase:
         offset: int = 0,
     ) -> Dict[str, Any]:
         """
-        Search courses by title or description with pagination.
+        Ranked search via FTS5 (falls back to LIKE if FTS unavailable).
 
         Returns:
-            {"rows": [...], "total": int, "truncated": bool}
+            {"rows": [...], "total": int, "truncated": bool, "engine": "fts5"|"like"}
         """
         cursor = self.conn.cursor()
         q = (query or "").strip()
         if not q:
-            return {"rows": [], "total": 0, "truncated": False}
+            return {"rows": [], "total": 0, "truncated": False, "engine": "fts5"}
 
         limit = max(1, min(int(limit), 200))
         offset = max(0, int(offset))
-        like = f"%{q}%"
 
-        if university:
-            count_sql = """
-                SELECT COUNT(*) FROM courses
-                WHERE university = ?
-                AND (title LIKE ? OR description LIKE ?)
-            """
-            count_args = (university, like, like)
-            data_sql = """
-                SELECT * FROM courses
-                WHERE university = ?
-                AND (title LIKE ? OR description LIKE ?)
-                ORDER BY course_id
-                LIMIT ? OFFSET ?
-            """
-            data_args = (university, like, like, limit, offset)
-        else:
-            count_sql = """
-                SELECT COUNT(*) FROM courses
-                WHERE title LIKE ? OR description LIKE ?
-            """
-            count_args = (like, like)
-            data_sql = """
-                SELECT * FROM courses
-                WHERE title LIKE ? OR description LIKE ?
-                ORDER BY university, course_id
-                LIMIT ? OFFSET ?
-            """
-            data_args = (like, like, limit, offset)
+        # FTS5 query: quote tokens for phrase-ish matching
+        tokens = [tok for tok in q.replace('"', " ").split() if tok]
+        fts_q = " ".join(f'"{t}"' for t in tokens) if tokens else q
 
-        cursor.execute(count_sql, count_args)
-        total = cursor.fetchone()[0]
-        cursor.execute(data_sql, data_args)
-        rows = [dict(row) for row in cursor.fetchall()]
-        return {
-            "rows": rows,
-            "total": total,
-            "truncated": total > offset + len(rows),
-        }
+        try:
+            if university:
+                cursor.execute(
+                    """
+                    SELECT COUNT(*) FROM courses_fts
+                    WHERE courses_fts MATCH ? AND university = ?
+                    """,
+                    (fts_q, university),
+                )
+                total = cursor.fetchone()[0]
+                cursor.execute(
+                    """
+                    SELECT c.* FROM courses c
+                    JOIN courses_fts f ON c.id = f.rowid
+                    WHERE courses_fts MATCH ? AND c.university = ?
+                    ORDER BY bm25(courses_fts)
+                    LIMIT ? OFFSET ?
+                    """,
+                    (fts_q, university, limit, offset),
+                )
+            else:
+                cursor.execute(
+                    "SELECT COUNT(*) FROM courses_fts WHERE courses_fts MATCH ?",
+                    (fts_q,),
+                )
+                total = cursor.fetchone()[0]
+                cursor.execute(
+                    """
+                    SELECT c.* FROM courses c
+                    JOIN courses_fts f ON c.id = f.rowid
+                    WHERE courses_fts MATCH ?
+                    ORDER BY bm25(courses_fts)
+                    LIMIT ? OFFSET ?
+                    """,
+                    (fts_q, limit, offset),
+                )
+            rows = [dict(row) for row in cursor.fetchall()]
+            return {
+                "rows": rows,
+                "total": total,
+                "truncated": total > offset + len(rows),
+                "engine": "fts5",
+            }
+        except Exception:
+            # Fallback LIKE
+            like = f"%{q}%"
+            if university:
+                cursor.execute(
+                    """
+                    SELECT COUNT(*) FROM courses
+                    WHERE university = ?
+                    AND (title LIKE ? OR description LIKE ? OR department LIKE ?)
+                    """,
+                    (university, like, like, like),
+                )
+                total = cursor.fetchone()[0]
+                cursor.execute(
+                    """
+                    SELECT * FROM courses
+                    WHERE university = ?
+                    AND (title LIKE ? OR description LIKE ? OR department LIKE ?)
+                    ORDER BY course_id
+                    LIMIT ? OFFSET ?
+                    """,
+                    (university, like, like, like, limit, offset),
+                )
+            else:
+                cursor.execute(
+                    """
+                    SELECT COUNT(*) FROM courses
+                    WHERE title LIKE ? OR description LIKE ? OR department LIKE ?
+                    """,
+                    (like, like, like),
+                )
+                total = cursor.fetchone()[0]
+                cursor.execute(
+                    """
+                    SELECT * FROM courses
+                    WHERE title LIKE ? OR description LIKE ? OR department LIKE ?
+                    ORDER BY university, course_id
+                    LIMIT ? OFFSET ?
+                    """,
+                    (like, like, like, limit, offset),
+                )
+            rows = [dict(row) for row in cursor.fetchall()]
+            return {
+                "rows": rows,
+                "total": total,
+                "truncated": total > offset + len(rows),
+                "engine": "like",
+            }
 
     VALID_OFFERINGS = ("Fall", "Spring", "Summer", "Winter", "Year-round")
 
