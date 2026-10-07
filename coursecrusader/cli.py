@@ -55,7 +55,14 @@ def main():
     type=int,
     help='Limit number of courses to scrape (for testing)'
 )
-def scrape(school: str, output: Optional[str], format: str, limit: Optional[int]):
+@click.option(
+    '--database',
+    '-d',
+    type=click.Path(),
+    default=None,
+    help='SQLite path for SqlitePipeline (default: COURSECRUSADER_DB_PATH or courses.db)'
+)
+def scrape(school: str, output: Optional[str], format: str, limit: Optional[int], database: Optional[str]):
     """
     Scrape course catalog for a specific university.
 
@@ -83,6 +90,13 @@ def scrape(school: str, output: Optional[str], format: str, limit: Optional[int]
     click.echo(f"📁 Output: {output} ({format})")
 
     settings = get_project_settings()
+
+    import os
+    db_path = database or os.environ.get("COURSECRUSADER_DB_PATH") or settings.get(
+        "COURSECRUSADER_DB_PATH", "courses.db"
+    )
+    settings.set("COURSECRUSADER_DB_PATH", db_path)
+    click.echo(f"🗄️  SQLite: {db_path}")
 
     feed_format = 'jsonlines' if format == 'jsonl' else format
     settings.set('FEEDS', {

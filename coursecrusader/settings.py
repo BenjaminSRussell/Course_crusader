@@ -44,7 +44,11 @@ DOWNLOADER_MIDDLEWARES = {
 ITEM_PIPELINES = {
     'coursecrusader.pipelines.ValidationPipeline': 100,
     'coursecrusader.pipelines.DeduplicationPipeline': 200,
+    'coursecrusader.pipelines.SqlitePipeline': 300,
 }
+
+# SQLite catalog path (#9). Override via env COURSECRUSADER_DB_PATH or -s.
+COURSECRUSADER_DB_PATH = 'courses.db'
 
 AUTOTHROTTLE_ENABLED = True
 AUTOTHROTTLE_START_DELAY = 1

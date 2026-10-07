@@ -66,3 +66,14 @@ coursecrusader export -d courses.db -o courses.parquet
 
 See [docs/PARQUET_EXPORT.md](docs/PARQUET_EXPORT.md).
 
+## SQLite persistence (#9)
+
+Scrapes upsert into SQLite via `SqlitePipeline` (default `courses.db`):
+
+```bash
+coursecrusader scrape -s uconn -d courses.db
+COURSECRUSADER_DB_PATH=/tmp/courses.db coursecrusader scrape -s uconn
+```
+
+Re-scrapes upsert on `(university, course_id)` and append a `scrape_metadata` row.
+
