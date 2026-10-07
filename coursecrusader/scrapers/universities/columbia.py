@@ -9,6 +9,7 @@ from ...parsers import clean_text, extract_credits
 class ColumbiaScraper(BaseCourseScraper):
     name = "columbia"
     university = "Columbia University"
+    readiness = "READY"
     start_urls = ['https://www.columbia.edu/cu/bulletin/uwb/']
 
     custom_settings = {

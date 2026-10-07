@@ -9,6 +9,7 @@ from ...parsers import clean_text, extract_credits
 class UciScraper(BaseCourseScraper):
     name = "uci"
     university = "University of California Irvine"
+    readiness = "READY"
     start_urls = ['https://catalogue.uci.edu/']
 
     custom_settings = {

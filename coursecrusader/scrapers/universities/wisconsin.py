@@ -9,6 +9,7 @@ from ...parsers import clean_text, extract_credits
 class WisconsinScraper(BaseCourseScraper):
     name = "wisconsin"
     university = "University of Wisconsin Madison"
+    readiness = "READY"
     start_urls = ['https://guide.wisc.edu/courses/']
 
     custom_settings = {

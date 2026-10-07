@@ -7,6 +7,7 @@ from ..registry import register_scraper
 class PittScraper(BaseCourseScraper):
     name = "pitt"
     university = "University of Pittsburgh"
+    readiness = "STUB"
     start_urls = ['https://httpbin.org/html']
 
     custom_settings = {

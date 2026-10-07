@@ -11,6 +11,7 @@ from ...parsers import clean_text, extract_credits
 
 @register_scraper
 class PrincetonScraper(BaseCourseScraper):
+    readiness = "READY"
     """Scraper for Princeton course catalog."""
 
     name = "princeton"

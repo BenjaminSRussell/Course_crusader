@@ -81,3 +81,50 @@ def register_scraper(scraper_class: Type[BaseCourseScraper]) -> Type[BaseCourseS
     """
     ScraperRegistry.register(scraper_class)
     return scraper_class
+
+def readiness_matrix():
+    """Return sorted list of (name, university, readiness) for all scrapers (#7)."""
+    rows = []
+    for name, cls in sorted(ScraperRegistry.get_all().items()):
+        rows.append(
+            (
+                name,
+                getattr(cls, "university", "?"),
+                getattr(cls, "readiness", "STUB"),
+            )
+        )
+    return rows
+
+
+def write_status_md(path=None):
+    """Regenerate docs/SCRAPER_STATUS.md from the registry (no hand drift)."""
+    from pathlib import Path as _P
+
+    path = _P(path) if path else _P(__file__).resolve().parents[2] / "docs" / "SCRAPER_STATUS.md"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    rows = readiness_matrix()
+    nl = chr(10)
+    lines_out = [
+        "# Scraper readiness matrix",
+        "",
+        "Auto-generated from `ScraperRegistry` — run `coursecrusader status --write`",
+        "to refresh. Do not hand-edit the table by hand.",
+        "",
+        "| key | university | status |",
+        "|-----|------------|--------|",
+    ]
+    for name, uni, status in rows:
+        lines_out.append(f"| `{name}` | {uni} | **{status}** |")
+    stub = sum(1 for *_, s in rows if s == "STUB")
+    ready = sum(1 for *_, s in rows if s == "READY")
+    lines_out += [
+        "",
+        f"Totals: **{ready} READY**, **{stub} STUB**, {len(rows)} registered.",
+        "",
+    ]
+    path.write_text(nl.join(lines_out))
+    return path
+
+
+if __name__ == "__main__":
+    print(write_status_md())

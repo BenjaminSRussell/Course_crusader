@@ -15,6 +15,7 @@ from ...parsers import clean_text, extract_credits
 
 @register_scraper
 class StanfordScraper(BaseCourseScraper):
+    readiness = "READY"
     """
     Scraper for Stanford University course catalog.
     """

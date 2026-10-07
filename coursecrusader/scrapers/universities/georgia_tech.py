@@ -7,6 +7,7 @@ from ..registry import register_scraper
 class GeorgiaTechScraper(BaseCourseScraper):
     name = "georgia_tech"
     university = "Georgia Institute of Technology"
+    readiness = "STUB"
     start_urls = ['https://httpbin.org/html']
 
     custom_settings = {

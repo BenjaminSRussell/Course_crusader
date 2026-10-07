@@ -9,6 +9,7 @@ from ...parsers import clean_text, extract_credits
 class PennStateScraper(BaseCourseScraper):
     name = "penn_state"
     university = "Pennsylvania State University"
+    readiness = "READY"
     start_urls = ['https://bulletins.psu.edu/university-course-descriptions/']
 
     custom_settings = {

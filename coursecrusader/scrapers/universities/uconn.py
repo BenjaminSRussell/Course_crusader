@@ -11,6 +11,7 @@ from ...parsers import clean_text, extract_credits
 class UConnScraper(BaseCourseScraper):
     name = "uconn"
     university = "University of Connecticut"
+    readiness = "READY"
     start_urls = ['https://catalog.uconn.edu/undergraduate/courses/']
 
     custom_settings = {

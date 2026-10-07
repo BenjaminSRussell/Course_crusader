@@ -7,6 +7,7 @@ from ..registry import register_scraper
 class UvaScraper(BaseCourseScraper):
     name = "uva"
     university = "University of Virginia"
+    readiness = "STUB"
     start_urls = ['https://httpbin.org/html']
 
     custom_settings = {

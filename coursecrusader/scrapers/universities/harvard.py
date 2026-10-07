@@ -13,6 +13,7 @@ from ...parsers import clean_text, extract_credits
 
 @register_scraper
 class HarvardScraper(BaseCourseScraper):
+    readiness = "READY"
     """Scraper for Harvard course catalog."""
 
     name = "harvard"
