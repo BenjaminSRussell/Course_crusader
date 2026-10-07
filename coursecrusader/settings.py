@@ -36,6 +36,8 @@ SPIDER_MIDDLEWARES = {
 }
 
 DOWNLOADER_MIDDLEWARES = {
+    'scrapy.downloadermiddlewares.robotstxt.RobotsTxtMiddleware': 100,
+    'coursecrusader.middlewares.PolitenessLoggingMiddleware': 110,
     'coursecrusader.middlewares.CourseCrusaderDownloaderMiddleware': 543,
 }
 
@@ -75,3 +77,9 @@ FEEDS = {
 LOG_LEVEL = 'INFO'
 LOG_FORMAT = '%(asctime)s [%(name)s] %(levelname)s: %(message)s'
 LOG_DATEFORMAT = '%Y-%m-%d %H:%M:%S'
+
+
+# --- Politeness (#12) ---
+# ROBOTSTXT_OBEY=True enables Scrapy's RobotsTxtMiddleware.
+# Override DOWNLOAD_DELAY / CONCURRENT_REQUESTS_PER_DOMAIN per school via
+# BaseCourseScraper.custom_settings (see uconn.py DOWNLOAD_DELAY=1.5).

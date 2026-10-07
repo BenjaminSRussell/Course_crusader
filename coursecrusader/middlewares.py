@@ -52,3 +52,27 @@ class CourseCrusaderDownloaderMiddleware:
 
     def spider_opened(self, spider):
         spider.logger.info(f'Spider opened: {spider.name}')
+
+
+class PolitenessLoggingMiddleware:
+    """Log robots.txt denials and remind operators of DOWNLOAD_DELAY (#12)."""
+
+    @classmethod
+    def from_crawler(cls, crawler):
+        return cls(crawler)
+
+    def __init__(self, crawler):
+        self.crawler = crawler
+
+    def process_exception(self, request, exception, spider):
+        # RobotsTxtMiddleware raises IgnoreRequest for Disallow
+        name = type(exception).__name__
+        if "IgnoreRequest" in name or "RobotsTxt" in name or "robots" in str(exception).lower():
+            spider.logger.info(
+                "robots.txt skipped %s (school delay=%s)",
+                request.url,
+                spider.custom_settings.get("DOWNLOAD_DELAY")
+                if getattr(spider, "custom_settings", None)
+                else spider.settings.get("DOWNLOAD_DELAY"),
+            )
+        return None
