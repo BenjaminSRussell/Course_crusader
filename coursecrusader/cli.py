@@ -496,6 +496,28 @@ def db_stats(database: str, university: Optional[str]):
 
 
 
+
+
+@main.command("graph")
+@click.option("--course", "-c", required=True, help="Target course_id e.g. CSE 2100")
+@click.option("--university", "-u", default=None)
+@click.option("--database", "-d", default="courses.db", show_default=True)
+@click.option("--format", "-f", "fmt", type=click.Choice(["json", "dot"]), default="json")
+@click.option("--rebuild/--no-rebuild", default=True, help="Rebuild edges from prerequisites_json first")
+def graph_cmd(course: str, university: Optional[str], database: str, fmt: str, rebuild: bool):
+    """Export prerequisite graph into a course (#5)."""
+    from .database import CourseDatabase
+
+    with CourseDatabase(database) as db:
+        if rebuild:
+            info = db.rebuild_prerequisite_edges(university)
+            click.echo(f"Rebuilt edges: {info['edges']} (cycles={len(info['cycles'])})")
+            for cyc in info["cycles"][:5]:
+                click.echo(f"  cycle: {' -> '.join(cyc)}")
+        out = db.export_graph(course, university=university, fmt=fmt)
+        click.echo(out)
+
+
 @main.command("explore")
 @click.option("--database", "-d", default="courses.db", show_default=True)
 @click.option("--host", default="127.0.0.1", show_default=True)

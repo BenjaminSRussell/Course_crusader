@@ -101,3 +101,12 @@ coursecrusader explore -d courses.db   # FastAPI UI — pip install fastapi uvic
 
 Search uses SQLite **FTS5** (ranked); falls back to LIKE if needed.
 
+## Prerequisite graphs (#5)
+
+```bash
+coursecrusader graph -c "CSE 2100" -u UConn -d courses.db
+coursecrusader graph -c "CSE 2100" -f dot > prereqs.dot
+```
+
+Rebuilds `course_edges` from `prerequisites_json` and reports cycles.
+
