@@ -343,6 +343,45 @@ def export_cmd(
         click.echo(f"Wrote {n} rows to {output}")
 
 
+
+
+@main.command("refresh")
+@click.option("--database", "-d", type=click.Path(), default="courses.db", show_default=True)
+@click.option("--university", "-u", required=True)
+@click.option("--input", "-i", "input_path", type=click.Path(exists=True), required=True,
+              help="JSON/JSONL course fixture or scrape output")
+@click.option("--url", default=None, help="Logical catalog URL key for the snapshot")
+def refresh_cmd(database: str, university: str, input_path: str, url: Optional[str]):
+    """Incremental catalog refresh via content hash (#6). Skips when unchanged."""
+    import hashlib
+    import json
+    from pathlib import Path as P
+    from .database import CourseDatabase
+
+    path = P(input_path)
+    raw = path.read_bytes()
+    content_hash = hashlib.sha256(raw).hexdigest()
+    text = raw.decode("utf-8")
+    if path.suffix == ".jsonl":
+        courses = [json.loads(line) for line in text.splitlines() if line.strip()]
+    else:
+        data = json.loads(text)
+        courses = data if isinstance(data, list) else data.get("courses", [data])
+
+    snap_url = url or f"file://{path.name}"
+    with CourseDatabase(database) as db:
+        result = db.refresh_courses_from_dicts(
+            university, courses, content_hash, url=snap_url
+        )
+    if result.get("skipped"):
+        click.echo(f"Skipped {university}: snapshot unchanged ({result.get('total')} courses)")
+    else:
+        click.echo(
+            f"Refreshed {university}: +{result['added']} ~{result['updated']} "
+            f"(total {result['total']})"
+        )
+
+
 @main.command()
 def schema():
     """

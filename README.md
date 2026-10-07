@@ -83,3 +83,11 @@ SQLite catalog (`courses.db`) uses `UNIQUE(university, course_id)` so the same
 code at two schools stays two rows while re-scrapes upsert. See
 [docs/CATALOG_SCHEMA.md](docs/CATALOG_SCHEMA.md).
 
+## Incremental refresh (#6)
+
+```bash
+coursecrusader refresh -u UConn -i uconn_courses.jsonl -d courses.db
+```
+
+Uses a SHA-256 snapshot of the input file; unchanged content is skipped.
+
