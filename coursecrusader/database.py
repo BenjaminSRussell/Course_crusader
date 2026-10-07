@@ -299,6 +299,102 @@ class CourseDatabase:
             "truncated": total > offset + len(rows),
         }
 
+
+    VALID_OFFERINGS = ("Fall", "Spring", "Summer", "Winter", "Year-round")
+
+    def courses_with_corequisite(
+        self,
+        course_id: str,
+        university: Optional[str] = None,
+    ) -> Dict[str, Any]:
+        """Return courses whose corequisites_json list contains ``course_id``.
+
+        Matching is exact against JSON array elements (not free-text description).
+        Invalid JSON rows are skipped and counted in ``skipped_invalid``.
+        """
+        needle = (course_id or "").strip()
+        if not needle:
+            return {"rows": [], "skipped_invalid": 0}
+
+        cursor = self.conn.cursor()
+        if university:
+            cursor.execute(
+                """
+                SELECT * FROM courses
+                WHERE university = ?
+                  AND corequisites_json IS NOT NULL
+                  AND TRIM(corequisites_json) != ''
+                ORDER BY course_id
+                """,
+                (university,),
+            )
+        else:
+            cursor.execute(
+                """
+                SELECT * FROM courses
+                WHERE corequisites_json IS NOT NULL
+                  AND TRIM(corequisites_json) != ''
+                ORDER BY university, course_id
+                """
+            )
+
+        rows = []
+        skipped_invalid = 0
+        for row in cursor.fetchall():
+            course = dict(row)
+            raw = course.get("corequisites_json")
+            try:
+                parsed = json.loads(raw) if isinstance(raw, str) else raw
+            except (TypeError, json.JSONDecodeError):
+                skipped_invalid += 1
+                continue
+            if not isinstance(parsed, list):
+                skipped_invalid += 1
+                continue
+            codes = {str(item).strip() for item in parsed if item is not None}
+            if needle in codes:
+                rows.append(course)
+        return {"rows": rows, "skipped_invalid": skipped_invalid}
+
+    def courses_offered_in(self, term: str) -> Dict[str, Any]:
+        """Return courses whose offerings_json contains the exact term enum.
+
+        ``Fall`` does not match ``Year-round``. Invalid JSON is skipped.
+        """
+        term_norm = (term or "").strip()
+        if term_norm not in self.VALID_OFFERINGS:
+            raise ValueError(
+                f"Invalid term {term!r}; expected one of {list(self.VALID_OFFERINGS)}"
+            )
+
+        cursor = self.conn.cursor()
+        cursor.execute(
+            """
+            SELECT * FROM courses
+            WHERE offerings_json IS NOT NULL
+              AND TRIM(offerings_json) != ''
+            ORDER BY university, course_id
+            """
+        )
+
+        rows = []
+        skipped_invalid = 0
+        for row in cursor.fetchall():
+            course = dict(row)
+            raw = course.get("offerings_json")
+            try:
+                parsed = json.loads(raw) if isinstance(raw, str) else raw
+            except (TypeError, json.JSONDecodeError):
+                skipped_invalid += 1
+                continue
+            if not isinstance(parsed, list):
+                skipped_invalid += 1
+                continue
+            offerings = {str(item).strip() for item in parsed if item is not None}
+            if term_norm in offerings:
+                rows.append(course)
+        return {"rows": rows, "skipped_invalid": skipped_invalid}
+
     def get_statistics(self) -> Dict[str, Any]:
         """
         Get database statistics.
