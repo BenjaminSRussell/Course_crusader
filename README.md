@@ -110,3 +110,11 @@ coursecrusader graph -c "CSE 2100" -f dot > prereqs.dot
 
 Rebuilds `course_edges` from `prerequisites_json` and reports cycles.
 
+## PDF catalog ingest (#10)
+
+```bash
+coursecrusader ingest-pdf -u UConn -f bulletin.pdf -d courses.db -o courses.jsonl
+```
+
+Fixture: `tests/fixtures/pdfs/sample_catalog.pdf`.
+
