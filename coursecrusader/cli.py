@@ -470,12 +470,7 @@ def search(query: str, database: str, university: Optional[str], limit: int):
         click.echo(f"❌ Error: {e}", err=True)
         sys.exit(1)
 
-
-if __name__ == '__main__':
-    main()
-
-
-@cli.command('corequisite')
+@main.command('corequisite')
 @click.argument('course_id')
 @click.option(
     '--database',
@@ -505,7 +500,7 @@ def corequisite(course_id: str, database: str, university: Optional[str]):
         db.close()
 
 
-@cli.command('offered')
+@main.command('offered')
 @click.argument('term')
 @click.option(
     '--database',
@@ -535,3 +530,6 @@ def offered(term: str, database: str):
         raise SystemExit(2)
     finally:
         db.close()
+
+if __name__ == '__main__':
+    main()
