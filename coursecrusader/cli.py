@@ -295,6 +295,56 @@ def merge(files: tuple, output: str):
         sys.exit(1)
 
 
+
+
+@main.command("export")
+@click.option(
+    "--database",
+    "-d",
+    "database",
+    type=click.Path(exists=True),
+    default="courses.db",
+    show_default=True,
+    help="SQLite courses database",
+)
+@click.option(
+    "--format",
+    "-f",
+    "fmt",
+    type=click.Choice(["parquet", "json"], case_sensitive=False),
+    default="parquet",
+    show_default=True,
+)
+@click.option(
+    "--output",
+    "-o",
+    type=click.Path(),
+    required=True,
+    help="Output .parquet file or partition directory",
+)
+@click.option("--university", "-u", default=None, help="Filter to one university")
+@click.option(
+    "--partition-by-university",
+    is_flag=True,
+    help="Write Hive-style university= partitions (parquet only)",
+)
+def export_cmd(database: str, fmt: str, output: str, university: Optional[str], partition_by_university: bool):
+    """Export courses.db to Parquet (or JSON) for Data-visualizer handoff (#11)."""
+    from .database import CourseDatabase
+
+    with CourseDatabase(database) as db:
+        if fmt.lower() == "json":
+            db.export_to_json(output, university=university)
+            click.echo(f"Wrote JSON export to {output}")
+            return
+        n = db.export_to_parquet(
+            output,
+            university=university,
+            partition_by_university=partition_by_university,
+        )
+        click.echo(f"Wrote {n} rows to {output}")
+
+
 @main.command()
 def schema():
     """
