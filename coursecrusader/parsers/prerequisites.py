@@ -4,7 +4,12 @@ Parser for prerequisite requirements.
 Converts natural language prerequisite strings into structured logical expressions.
 """
 
-from ..parsers import clean_text
+from __future__ import annotations
+
+import re
+from typing import Any, Dict, List, Optional
+
+from .text_utils import clean_text
 
 class PrerequisiteParser:
     """

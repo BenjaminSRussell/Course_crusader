@@ -2,8 +2,9 @@
 Parsing utilities for course catalog data.
 """
 
-from .prerequisites import PrerequisiteParser
+# Import text_utils BEFORE prerequisites to avoid circular import (#18)
 from .text_utils import clean_text, normalize_whitespace, extract_credits
+from .prerequisites import PrerequisiteParser
 from .pdf_parser import PDFCatalogParser, PDFCourseScraper
 
 __all__ = [
@@ -12,5 +13,5 @@ __all__ = [
     'normalize_whitespace',
     'extract_credits',
     'PDFCatalogParser',
-    'PDFCourseScraper'
+    'PDFCourseScraper',
 ]
