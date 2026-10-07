@@ -77,3 +77,9 @@ COURSECRUSADER_DB_PATH=/tmp/courses.db coursecrusader scrape -s uconn
 
 Re-scrapes upsert on `(university, course_id)` and append a `scrape_metadata` row.
 
+## Storage / dedupe (#3)
+
+SQLite catalog (`courses.db`) uses `UNIQUE(university, course_id)` so the same
+code at two schools stays two rows while re-scrapes upsert. See
+[docs/CATALOG_SCHEMA.md](docs/CATALOG_SCHEMA.md).
+

@@ -37,6 +37,28 @@ class CourseDatabase:
         cursor = self.conn.cursor()
 
         cursor.execute("""
+            CREATE TABLE IF NOT EXISTS institutions (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                slug TEXT NOT NULL UNIQUE,
+                name TEXT NOT NULL,
+                country TEXT DEFAULT 'US',
+                created_at TEXT
+            )
+        """)
+
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS source_urls (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                university TEXT NOT NULL,
+                course_id TEXT,
+                url TEXT NOT NULL,
+                kind TEXT DEFAULT 'catalog',
+                last_seen TEXT,
+                UNIQUE(university, url)
+            )
+        """)
+
+        cursor.execute("""
             CREATE TABLE IF NOT EXISTS courses (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 university TEXT NOT NULL,
@@ -92,6 +114,39 @@ class CourseDatabase:
             )
         """)
 
+        self.conn.commit()
+
+
+    def upsert_institution(self, slug: str, name: str, country: str = "US") -> int:
+        """Ensure an institution row exists; return its id."""
+        cursor = self.conn.cursor()
+        cursor.execute(
+            """
+            INSERT INTO institutions (slug, name, country, created_at)
+            VALUES (?, ?, ?, ?)
+            ON CONFLICT(slug) DO UPDATE SET name=excluded.name
+            """,
+            (slug, name, country, datetime.utcnow().isoformat() + "Z"),
+        )
+        self.conn.commit()
+        cursor.execute("SELECT id FROM institutions WHERE slug = ?", (slug,))
+        return int(cursor.fetchone()[0])
+
+    def record_source_url(
+        self, university: str, url: str, course_id: str = None, kind: str = "catalog"
+    ) -> None:
+        cursor = self.conn.cursor()
+        cursor.execute(
+            """
+            INSERT INTO source_urls (university, course_id, url, kind, last_seen)
+            VALUES (?, ?, ?, ?, ?)
+            ON CONFLICT(university, url) DO UPDATE SET
+                course_id=excluded.course_id,
+                kind=excluded.kind,
+                last_seen=excluded.last_seen
+            """,
+            (university, course_id, url, kind, datetime.utcnow().isoformat() + "Z"),
+        )
         self.conn.commit()
 
     def insert_course(self, course: Course) -> Dict[str, Any]:
